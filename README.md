@@ -1,6 +1,6 @@
 # Neovim configuration
 
-Personal Neovim configuration for Go, Rust, TypeScript/JavaScript, and Lua
+Personal Neovim configuration for Go, Rust, TypeScript/JavaScript, Python and Lua
 development on macOS.
 
 It includes:

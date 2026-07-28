@@ -1,46 +1,48 @@
 require("nvim-treesitter").setup()
 
 require("nvim-treesitter").install({
-	"lua",
-	"vim",
-	"vimdoc",
+    "lua",
+    "vim",
+    "vimdoc",
 
-	"go",
-	"gomod",
-	"gosum",
-	"gowork",
+    "go",
+    "gomod",
+    "gosum",
+    "gowork",
 
-	"rust",
+    "python",
+    "rust",
 
-	"javascript",
-	"typescript",
-	"tsx",
+    "javascript",
+    "typescript",
+    "tsx",
 
-	"json",
-	"html",
-	"css",
-	"yaml",
+    "json",
+    "html",
+    "css",
+    "yaml",
 })
 
 vim.api.nvim_create_autocmd("FileType", {
-	pattern = {
-		"lua",
-		"vim",
-		"vimdoc",
-		"go",
-		"gomod",
-		"gowork",
-		"rust",
-		"javascript",
-		"javascriptreact",
-		"typescript",
-		"typescriptreact",
-		"json",
-		"html",
-		"css",
-		"yaml",
-	},
-	callback = function()
-		vim.treesitter.start()
-	end,
+    pattern = {
+        "lua",
+        "vim",
+        "vimdoc",
+        "go",
+        "gomod",
+        "gowork",
+        "python",
+        "rust",
+        "javascript",
+        "javascriptreact",
+        "typescript",
+        "typescriptreact",
+        "json",
+        "html",
+        "css",
+        "yaml",
+    },
+    callback = function()
+        vim.treesitter.start()
+    end,
 })
