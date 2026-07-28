@@ -167,6 +167,7 @@ Notation used below:
 | Normal | `Space g` | Prompt for text and grep the project |
 | Normal | `Space p v` | Toggle the file tree |
 | Normal | `Space a` | Add the current file to Harpoon |
+| Normal | `dd` | Removing files of Harpoon (execute on top of file name in Harpoon menu) |
 | Normal | `Space h` | Toggle the Harpoon menu |
 | Normal | `Space 1` … `Space 4` | Open Harpoon file 1 … 4 |
 | Normal | `Space u` | Toggle the undo tree |
