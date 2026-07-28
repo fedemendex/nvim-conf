@@ -109,7 +109,16 @@ vim.keymap.set(
     "oassert.NoError(err, \"\")<Esc>F\";a"
 )
 
-
 vim.keymap.set("n", "<leader><leader>", function()
-    vim.cmd("so")
-end)
+    if vim.bo.filetype ~= "lua" or not vim.bo.modifiable then
+        vim.notify(
+            "This mapping only reloads editable Lua files",
+            vim.log.levels.WARN
+        )
+        return
+    end
+
+    vim.cmd.source(vim.api.nvim_buf_get_name(0))
+end, {
+    desc = "Reload current Lua file",
+})

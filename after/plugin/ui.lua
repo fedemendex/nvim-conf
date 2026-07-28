@@ -1,4 +1,28 @@
+local function on_attach(bufnr)
+    local api = require("nvim-tree.api")
+
+    -- Preserve nvim-tree's standard mappings
+    api.map.on_attach.default(bufnr)
+
+    vim.keymap.set("n", "<leader>a", function()
+        local node = api.tree.get_node_under_cursor()
+
+        if node and node.type == "file" then
+            require("harpoon.mark").add_file(node.absolute_path)
+            vim.notify("Added to Harpoon: " .. node.name)
+        else
+            vim.notify("Select a file first")
+        end
+    end, {
+        buffer = bufnr,
+        silent = true,
+        desc = "Add selected file to Harpoon",
+    })
+end
+
 require("nvim-tree").setup({
+    on_attach = on_attach,
+
     view = {
         side = "left",
         width = 30,

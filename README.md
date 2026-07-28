@@ -175,6 +175,8 @@ Notation used below:
 | Normal | `Ctrl-k` / `Ctrl-j` | Next/previous quickfix entry |
 | Normal | `Space k` / `Space j` | Next/previous location-list entry |
 | Normal | `a` | Add files on nerd-tree window |
+| Normal | `Ctrl-w + one of hjkl` | Move to a different pane | 
+
 
 ### Editing and clipboard
 
