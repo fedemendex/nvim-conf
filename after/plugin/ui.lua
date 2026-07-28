@@ -77,3 +77,24 @@ vim.api.nvim_create_autocmd("TermOpen", {
         })
     end,
 })
+-- Auto open nerdtree and terminal by defult, with nerdree selected
+vim.api.nvim_create_autocmd("VimEnter", {
+    callback = function()
+        vim.schedule(function()
+            local editor_window = vim.api.nvim_get_current_win()
+
+            vim.cmd("1ToggleTerm direction=horizontal")
+
+            if vim.api.nvim_win_is_valid(editor_window) then
+                vim.api.nvim_set_current_win(editor_window)
+            end
+
+            vim.cmd("NvimTreeOpen")
+
+            -- Run after Toggleterm finishes changing focus
+            vim.schedule(function()
+                vim.cmd("NvimTreeFocus")
+            end)
+        end)
+    end,
+})
