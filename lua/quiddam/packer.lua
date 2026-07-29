@@ -67,13 +67,6 @@ return require("packer").startup(function(use)
         },
     }
 
-    use {
-        "folke/which-key.nvim",
-        requires = {
-            "nvim-tree/nvim-web-devicons",
-        },
-    }
-
     -- Install and configure language servers
     use { "mason-org/mason-lspconfig.nvim",
         requires = {

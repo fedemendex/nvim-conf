@@ -45,6 +45,8 @@ Install the files with this structure:
 The uploaded `init(1).lua` is the root `~/.config/nvim/init.lua`. The uploaded
 `init.lua` belongs at `~/.config/nvim/lua/quiddam/init.lua`.
 
+To get help on the different keymaps hit `Space ?`
+
 ## Installation
 
 ### 1. Install system dependencies

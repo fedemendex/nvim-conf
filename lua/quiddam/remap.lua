@@ -4,6 +4,14 @@ vim.g.mapleader = " "
 vim.opt.mouse = "a"
 vim.opt.clipboard = "unnamedplus"
 
+vim.keymap.set("n", "<leader>?", "<cmd>Telescope keymaps<CR>", {
+    desc = "Search all keyboard mappings",
+})
+
+vim.keymap.set("n", "<C-a>", "ggVG", {
+    desc = "Select entire file",
+})
+
 -- Quit -----------------------------------------------------------------------
 
 vim.keymap.set("n", "<leader>qq", "<cmd>wqa<CR>", {
