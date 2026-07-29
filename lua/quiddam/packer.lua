@@ -60,6 +60,12 @@ return require("packer").startup(function(use)
     use 'mbbill/undotree'
     use 'tpope/vim-fugitive'
 
+    use {
+        "nvim-lualine/lualine.nvim",
+        requires = {
+            "nvim-tree/nvim-web-devicons",
+        },
+    }
 
     -- Install and configure language servers
     use { "mason-org/mason-lspconfig.nvim",
