@@ -199,6 +199,8 @@ Notation used below:
 | Visual | `Space r` | Prepare replacement restricted to the visual selection |
 | Normal | `Space x` | Make the current file executable |
 | Normal | `Space Space` | Source/reload the current Lua file |
+| Normal | `u` | Undo | 
+| Normal | `Ctrl-r` | Redo | 
 
 Ordinary yanks also use the macOS clipboard because
 `clipboard=unnamedplus` is enabled.

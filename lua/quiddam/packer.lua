@@ -59,6 +59,7 @@ return require("packer").startup(function(use)
 
     use 'mbbill/undotree'
     use 'tpope/vim-fugitive'
+    use "lewis6991/gitsigns.nvim"
 
     use {
         "nvim-lualine/lualine.nvim",
