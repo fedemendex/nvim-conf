@@ -165,7 +165,7 @@ Notation used below:
 | Normal | `Space o` | Find files with Telescope |
 | Normal | `Space g i t` | Find Git-tracked files with Telescope |
 | Normal | `Space g` | Prompt for text and grep the project |
-| Normal | `Space p v` | Toggle the file tree |
+| Normal | `Space n` | Toggle the file tree |
 | Normal | `Space a` | Add the current file to Harpoon |
 | Normal | `dd` | Removing files of Harpoon (execute on top of file name in Harpoon menu) |
 | Normal | `Space h` | Toggle the Harpoon menu |
@@ -176,7 +176,7 @@ Notation used below:
 | Normal | `Ctrl-k` / `Ctrl-j` | Next/previous quickfix entry |
 | Normal | `Space k` / `Space j` | Next/previous location-list entry |
 | Normal | `a` | Add files on nerd-tree window |
-| Normal | `Ctrl-w + one of hjkl` | Move to a different pane | 
+| Normal | `Ctrl-h|j|k|l` | Move to a different pane | 
 
 
 ### Editing and clipboard

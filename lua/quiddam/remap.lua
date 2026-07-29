@@ -122,3 +122,39 @@ vim.keymap.set("n", "<leader><leader>", function()
 end, {
     desc = "Reload current Lua file",
 })
+
+local window_mappings = {
+    ["<C-h>"] = "h",
+    ["<C-j>"] = "j",
+    ["<C-k>"] = "k",
+    ["<C-l>"] = "l",
+
+    ["<C-Left>"] = "h",
+    ["<C-Down>"] = "j",
+    ["<C-Up>"] = "k",
+    ["<C-Right>"] = "l",
+}
+
+for key, direction in pairs(window_mappings) do
+    -- Normal mode
+    vim.keymap.set(
+        "n",
+        key,
+        "<C-w>" .. direction,
+        {
+            silent = true,
+            desc = "Move to " .. direction .. " window",
+        }
+    )
+
+    -- Terminal-input mode
+    vim.keymap.set(
+        "t",
+        key,
+        "<C-\\><C-n><C-w>" .. direction,
+        {
+            silent = true,
+            desc = "Move to " .. direction .. " window",
+        }
+    )
+end
