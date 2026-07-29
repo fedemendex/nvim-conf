@@ -1,9 +1,19 @@
-local function on_attach(bufnr)
+local windows = require("quiddam.windows")
+
+-- nvim-tree ---------------------------------------------------------------
+
+local function tree_on_attach(bufnr)
     local api = require("nvim-tree.api")
 
-    -- Preserve nvim-tree's standard mappings
+    -- Preserve standard nvim-tree mappings.
     api.map.on_attach.default(bufnr)
 
+    -- nvim-tree maps Space locally, blocking leader mappings.
+    pcall(vim.keymap.del, "n", "<Space>", {
+        buffer = bufnr,
+    })
+
+    -- Add the selected tree file to Harpoon.
     vim.keymap.set("n", "<leader>a", function()
         local node = api.tree.get_node_under_cursor()
 
@@ -21,7 +31,7 @@ local function on_attach(bufnr)
 end
 
 require("nvim-tree").setup({
-    on_attach = on_attach,
+    on_attach = tree_on_attach,
 
     view = {
         side = "left",
@@ -46,6 +56,8 @@ vim.keymap.set("n", "<leader>pv", "<cmd>NvimTreeToggle<CR>", {
     desc = "Toggle file tree",
 })
 
+-- Toggleterm --------------------------------------------------------------
+
 require("toggleterm").setup({
     size = function(term)
         if term.direction == "horizontal" then
@@ -57,41 +69,75 @@ require("toggleterm").setup({
 
     direction = "horizontal",
     persist_size = false,
-    start_in_insert = true,
+    persist_mode = false,
+    start_in_insert = false,
     close_on_exit = true,
     shade_terminals = false,
+
+    on_open = function()
+        vim.wo.winfixheight = true
+    end,
 })
 
-vim.keymap.set("n", "<leader>ter", "<cmd>ToggleTerm<CR>", {
+vim.keymap.set("n", "<leader>ter", function()
+    -- Ensures the terminal split is created from the editor,
+    -- not from nvim-tree.
+    windows.focus_editor()
+
+    vim.cmd("1ToggleTerm direction=horizontal")
+end, {
     silent = true,
-    desc = "Toggle terminal",
+    desc = "Toggle bottom terminal",
 })
+
+local terminal_group = vim.api.nvim_create_augroup(
+    "ToggleTermMappings",
+    { clear = true }
+)
 
 vim.api.nvim_create_autocmd("TermOpen", {
+    group = terminal_group,
     pattern = "term://*toggleterm#*",
+
     callback = function(event)
         vim.keymap.set("t", "<Esc>", [[<C-\><C-n>]], {
             buffer = event.buf,
             silent = true,
-            desc = "Leave terminal input mode",
+            desc = "Leave terminal-input mode",
         })
     end,
 })
--- Auto open nerdtree and terminal by defult, with nerdree selected
+
+-- Startup layout ----------------------------------------------------------
+
+local startup_group = vim.api.nvim_create_augroup(
+    "OpenWorkspaceLayout",
+    { clear = true }
+)
+
 vim.api.nvim_create_autocmd("VimEnter", {
+    group = startup_group,
+    once = true,
+
     callback = function()
         vim.schedule(function()
             local editor_window = vim.api.nvim_get_current_win()
 
-            vim.cmd("1ToggleTerm direction=horizontal")
+            -- Remember the window where files should be opened.
+            windows.remember_editor(editor_window)
 
+            -- Open the tree on the left.
+            vim.cmd("NvimTreeOpen")
+
+            -- Return to the editor before opening the terminal.
             if vim.api.nvim_win_is_valid(editor_window) then
                 vim.api.nvim_set_current_win(editor_window)
             end
 
-            vim.cmd("NvimTreeOpen")
+            -- splitbelow=true keeps this beneath the editor.
+            vim.cmd("1ToggleTerm direction=horizontal")
 
-            -- Run after Toggleterm finishes changing focus
+            -- Start with nvim-tree focused.
             vim.schedule(function()
                 vim.cmd("NvimTreeFocus")
             end)

@@ -1,5 +1,10 @@
 vim.opt.guicursor = ""
 
+-- make horizontal split open below
+vim.opt.hidden = true
+vim.opt.splitbelow = true
+vim.opt.splitright = true
+
 vim.opt.nu = true
 vim.opt.relativenumber = true
 

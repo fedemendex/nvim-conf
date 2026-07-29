@@ -6,6 +6,7 @@ require("harpoon").setup({
     },
 })
 
+-- Required because Harpoon's global tabline setting wasn't activating it.
 require("harpoon.tabline").setup({
     tabline_prefix = " ",
     tabline_suffix = "  ",
@@ -13,22 +14,16 @@ require("harpoon.tabline").setup({
 
 local mark = require("harpoon.mark")
 local ui = require("harpoon.ui")
+local windows = require("quiddam.windows")
 
 vim.keymap.set("n", "<leader>a", mark.add_file)
 vim.keymap.set("n", "<leader>h", ui.toggle_quick_menu)
 
-vim.keymap.set("n", "<leader>1", function()
-    ui.nav_file(1)
-end)
-
-vim.keymap.set("n", "<leader>2", function()
-    ui.nav_file(2)
-end)
-
-vim.keymap.set("n", "<leader>3", function()
-    ui.nav_file(3)
-end)
-
-vim.keymap.set("n", "<leader>4", function()
-    ui.nav_file(4)
-end)
+for index = 1, 9 do
+    vim.keymap.set("n", "<leader>" .. index, function()
+        windows.focus_editor()
+        ui.nav_file(index)
+    end, {
+        desc = "Open Harpoon file " .. index,
+    })
+end
