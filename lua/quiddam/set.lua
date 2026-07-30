@@ -36,3 +36,7 @@ vim.opt.updatetime = 50
 vim.opt.colorcolumn = "80"
 
 vim.g.mapleader = " "
+
+-- Highlight the entire line containing the cursor
+vim.opt.cursorline = true
+vim.opt.cursorcolumn = true
