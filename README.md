@@ -175,10 +175,12 @@ Notation used below:
 | Normal | `Space u` | Toggle the undo tree |
 | Normal | `n` / `N` | Next/previous search result and centre it |
 | Normal | `Ctrl-d` / `Ctrl-u` | Half-page down/up and centre the cursor |
-| Normal | `Ctrl-k` / `Ctrl-j` | Next/previous quickfix entry |
 | Normal | `Space k` / `Space j` | Next/previous location-list entry |
 | Normal | `a` | Add files on nerd-tree window |
 | Normal | `Ctrl-h|j|k|l` | Move to a different pane | 
+| Normal | `Shift-Up` | Start structural selection | 
+| Visual | `Shift-Up` | Expand structural selection | 
+| Visual | `Shift-Down` | Shrink structural selection | 
 
 
 ### Editing and clipboard
@@ -226,6 +228,9 @@ already be available—for example `go`, `cargo`, `npm`, Vitest, or Jest.
 
 ### LSP
 
+These mappings exist only when a language server is attached to the current
+buffer.
+
 | Mode | Keys | Action |
 |---|---|---|
 | Normal | `g d` | Go to definition |
@@ -236,14 +241,21 @@ already be available—for example `go`, `cargo`, `npm`, Vitest, or Jest.
 | Normal | `Space d s` | Find symbols in the current document |
 | Normal | `Space w s` | Find symbols in the workspace |
 | Normal | `Space r n` | Rename the symbol under the cursor |
-| Normal | `Space c a` | Show code actions |
+| Normal/Visual | `Space c a` | Show available code actions (possible fixes to an error) |
+| Normal | `Space q f` | Apply an available quick fix |
+| Normal | `Space o i` | Organize imports |
 | Normal | `Space f` | Format the current buffer |
-| Normal | `Space d` | Show diagnostics for the current position |
+| Normal | `Space d` | Show diagnostics at the current position |
 | Normal | `[ d` / `] d` | Previous/next diagnostic |
 | Normal | `Space` + left click | Go to definition under the mouse pointer |
 
-In an LSP-enabled buffer, the buffer-local `Space d` diagnostic mapping takes
-precedence over the global black-hole-delete mapping.
+Code actions are provided by the attached language server. Depending on the
+language and cursor position, they may include adding imports, removing unused
+imports, filling missing struct fields, applying suggested rewrites, or fixing
+diagnostics.
+
+For Go, `gopls` supplies these actions. For TypeScript/JavaScript they come from
+`ts_ls`, and for Rust from `rust_analyzer`.
 
 Files are also formatted automatically immediately before saving.
 
@@ -271,6 +283,18 @@ The terminal opens horizontally at approximately one quarter of the Neovim
 window height. From terminal normal mode, use `Ctrl-w k` to move into the
 editor and `Ctrl-w j` to move back into the terminal; press `i` to resume
 typing in it.
+
+### Git hunks
+
+| Mode | Keys | Action |
+|---|---|---|
+| Normal | `] h` | Next Git hunk |
+| Normal | `[ h` | Previous Git hunk |
+| Normal | `Space g h p` | Preview the current hunk |
+| Normal | `Space g h b` | Show blame for the current line |
+| Normal | `Space g h d` | Diff the current file |
+| Normal/Visual | `Space g h s` | Stage the current hunk or selection |
+| Normal/Visual | `Space g h r` | Discard the current hunk or selection |
 
 ## Optional or currently incomplete mappings
 

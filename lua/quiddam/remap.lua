@@ -14,9 +14,22 @@ vim.keymap.set("n", "<C-a>", "ggVG", {
 
 -- Quit -----------------------------------------------------------------------
 
-vim.keymap.set("n", "<leader>qq", "<cmd>wqa<CR>", {
+vim.keymap.set("n", "<leader>qq", function()
+    -- Save ordinary modified file buffers first. If saving fails, this throws
+    -- and quitting stops, so changes are not silently discarded.
+    vim.cmd("wa")
+
+    -- Terminate every ToggleTerm shell, including hidden terminals.
+    local terminal = require("toggleterm.terminal")
+
+    for _, term in ipairs(terminal.get_all(true)) do
+        term:shutdown()
+    end
+
+    vim.cmd("qa")
+end, {
     silent = true,
-    desc = "Save all and quit Neovim",
+    desc = "Save all, close terminals, and quit Neovim",
 })
 
 -- LSP ------------------------------------------------------------------------
@@ -248,3 +261,19 @@ for key, mapping in pairs(window_mappings) do
         }
     )
 end
+
+-- Haram vim remaps (visual select)
+vim.keymap.set("n", "<S-Up>", "van", {
+    remap = true,
+    desc = "Start structural selection",
+})
+
+vim.keymap.set("x", "<S-Up>", "an", {
+    remap = true,
+    desc = "Expand structural selection",
+})
+
+vim.keymap.set("x", "<S-Down>", "in", {
+    remap = true,
+    desc = "Shrink structural selection",
+})
