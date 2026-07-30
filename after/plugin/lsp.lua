@@ -134,37 +134,90 @@ require("mason-lspconfig").setup({
 -- Buffer-local mappings, created only when an LSP attaches.
 vim.api.nvim_create_autocmd("LspAttach", {
     callback = function(event)
-        local opts = { buffer = event.buf }
         local telescope = require("telescope.builtin")
 
+        local function map(mode, keys, action, description)
+            vim.keymap.set(mode, keys, action, {
+                buffer = event.buf,
+                silent = true,
+                desc = description,
+            })
+        end
+
         -- Navigation
-        vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
-        vim.keymap.set("n", "gD", vim.lsp.buf.declaration, opts)
-        vim.keymap.set("n", "gi", vim.lsp.buf.implementation, opts)
-        vim.keymap.set("n", "gr", telescope.lsp_references, opts)
+        map("n", "gd", vim.lsp.buf.definition, "LSP: Go to definition")
+        map("n", "gD", vim.lsp.buf.declaration, "LSP: Go to declaration")
+        map("n", "gi", vim.lsp.buf.implementation, "LSP: Go to implementation")
+        map("n", "gr", telescope.lsp_references, "LSP: Find references")
 
         -- Information and project search
-        vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
-        vim.keymap.set("n", "<leader>ds", telescope.lsp_document_symbols, opts)
-        vim.keymap.set("n", "<leader>ws", telescope.lsp_dynamic_workspace_symbols, opts)
+        map("n", "K", vim.lsp.buf.hover, "LSP: Show documentation")
+        map(
+            "n",
+            "<leader>ds",
+            telescope.lsp_document_symbols,
+            "LSP: Find document symbols"
+        )
+        map(
+            "n",
+            "<leader>ws",
+            telescope.lsp_dynamic_workspace_symbols,
+            "LSP: Find workspace symbols"
+        )
 
         -- Refactoring
-        vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
-        vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, opts)
+        map(
+            "n",
+            "<leader>rn",
+            vim.lsp.buf.rename,
+            "LSP: Rename symbol"
+        )
+
+        map(
+            { "n", "x" },
+            "<leader>ca",
+            vim.lsp.buf.code_action,
+            "LSP: Show code actions"
+        )
+
+        map("n", "<leader>qf", function()
+            vim.lsp.buf.code_action({
+                context = {
+                    only = { "quickfix" },
+                },
+                apply = true,
+            })
+        end, "LSP: Apply quick fix")
+
+        map("n", "<leader>oi", function()
+            vim.lsp.buf.code_action({
+                context = {
+                    only = { "source.organizeImports" },
+                },
+                apply = true,
+            })
+        end, "LSP: Organize imports")
 
         -- Formatting
-        vim.keymap.set("n", "<leader>f", function()
+        map("n", "<leader>f", function()
             vim.lsp.buf.format({ async = true })
-        end, opts)
+        end, "LSP: Format current file")
 
         -- Diagnostics
-        vim.keymap.set("n", "<leader>d", vim.diagnostic.open_float, opts)
-        vim.keymap.set("n", "[d", function()
+        map(
+            "n",
+            "<leader>d",
+            vim.diagnostic.open_float,
+            "LSP: Show diagnostic"
+        )
+
+        map("n", "[d", function()
             vim.diagnostic.jump({ count = -1 })
-        end, opts)
-        vim.keymap.set("n", "]d", function()
+        end, "LSP: Previous diagnostic")
+
+        map("n", "]d", function()
             vim.diagnostic.jump({ count = 1 })
-        end, opts)
+        end, "LSP: Next diagnostic")
     end,
 })
 
