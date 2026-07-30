@@ -228,39 +228,39 @@ end, {
 
 -- Window navigation ----------------------------------------------------------
 
-local window_mappings = {
-    ["<C-h>"] = { direction = "h", label = "left" },
-    ["<C-j>"] = { direction = "j", label = "down" },
-    ["<C-k>"] = { direction = "k", label = "up" },
-    ["<C-l>"] = { direction = "l", label = "right" },
+-- local window_mappings = {
+--     ["<C-h>"] = { direction = "h", label = "left" },
+--     ["<C-j>"] = { direction = "j", label = "down" },
+--     ["<C-k>"] = { direction = "k", label = "up" },
+--     ["<C-l>"] = { direction = "l", label = "right" },
+--
+--     ["<C-Left>"] = { direction = "h", label = "left" },
+--     ["<C-Down>"] = { direction = "j", label = "down" },
+--     ["<C-Up>"] = { direction = "k", label = "up" },
+--     ["<C-Right>"] = { direction = "l", label = "right" },
+-- }
 
-    ["<C-Left>"] = { direction = "h", label = "left" },
-    ["<C-Down>"] = { direction = "j", label = "down" },
-    ["<C-Up>"] = { direction = "k", label = "up" },
-    ["<C-Right>"] = { direction = "l", label = "right" },
-}
-
-for key, mapping in pairs(window_mappings) do
-    vim.keymap.set(
-        "n",
-        key,
-        "<C-w>" .. mapping.direction,
-        {
-            silent = true,
-            desc = "Move to window on the " .. mapping.label,
-        }
-    )
-
-    vim.keymap.set(
-        "t",
-        key,
-        "<C-\\><C-n><C-w>" .. mapping.direction,
-        {
-            silent = true,
-            desc = "Move to window on the " .. mapping.label,
-        }
-    )
-end
+-- for key, mapping in pairs(window_mappings) do
+--     vim.keymap.set(
+--         "n",
+--         key,
+--         "<C-w>" .. mapping.direction,
+--         {
+--             silent = true,
+--             desc = "Move to window on the " .. mapping.label,
+--         }
+--     )
+--
+--     vim.keymap.set(
+--         "t",
+--         key,
+--         "<C-\\><C-n><C-w>" .. mapping.direction,
+--         {
+--             silent = true,
+--             desc = "Move to window on the " .. mapping.label,
+--         }
+--     )
+-- end
 
 -- Haram vim remaps (visual select)
 vim.keymap.set("n", "<S-Up>", "van", {
