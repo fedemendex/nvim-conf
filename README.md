@@ -284,6 +284,15 @@ window height. From terminal normal mode, use `Ctrl-w k` to move into the
 editor and `Ctrl-w j` to move back into the terminal; press `i` to resume
 typing in it.
 
+**Minimal git workflow**: Once you opened Fugitive's Git status (`Space g s`) you can see the changed files. 
+
+- To see what changed on each file, hover over the file and hit `=`.
+- To stage a file, hover over the file/hunk and hit `s`.
+- To unstage a file, hover over the file/hunk and hit `u`.
+- After staging the desired files/hunks, hit `cc`.
+- Write your commit message and then you can use `wq` to save the commit locally. 
+- To push your changes, `:Git push`
+
 ### Git hunks
 
 | Mode | Keys | Action |
