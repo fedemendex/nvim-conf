@@ -243,7 +243,7 @@ Ordinary yanks also use the macOS clipboard because
 | Mode | Keys | Action |
 |---|---|---|
 | Normal | `Space t n` | Run the nearest test |
-| Normal | `Space t` | Run every test in the current file |
+| Normal | `Space t f` | Run every test in the current file |
 | Normal | `Space t a` | Run the entire test suite |
 | Normal | `Space t t` | Run the last test again |
 
