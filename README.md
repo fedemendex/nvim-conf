@@ -208,6 +208,7 @@ Notation used below:
 | Normal | `Ctrl-d` / `Ctrl-u` | Half-page down/up and centre the cursor |
 | Normal | `Ctrl-k` / `Ctrl-j` | Next/previous quickfix entry |
 | Normal | `Space k` / `Space j` | Next/previous location-list entry |
+| Normal | `Shift-Up` / `Shift-Down` | Structural selection |
 
 ### Editing and clipboard
 
