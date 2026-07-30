@@ -12,6 +12,16 @@ vim.keymap.set("n", "<C-a>", "ggVG", {
     desc = "Select entire file",
 })
 
+-- Easy select ---------------------------------------------------------------
+
+vim.keymap.set("n", "<leader>w", "viw", {
+    desc = "Select word under cursor",
+})
+
+vim.keymap.set("n", "<leader>W", "viW", {
+    desc = "Select WORD under cursor",
+})
+
 -- Quit -----------------------------------------------------------------------
 
 vim.keymap.set("n", "<leader>qq", function()

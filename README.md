@@ -209,6 +209,8 @@ Notation used below:
 | Normal | `Ctrl-k` / `Ctrl-j` | Next/previous quickfix entry |
 | Normal | `Space k` / `Space j` | Next/previous location-list entry |
 | Normal | `Shift-Up` / `Shift-Down` | Structural selection |
+| Normal | `Space w`| Select current word (`viw`) |
+| Normal | `Space W`| Select current whitespace delimited word (`viW`) |
 
 ### Editing and clipboard
 
