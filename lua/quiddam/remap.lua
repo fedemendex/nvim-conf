@@ -325,6 +325,6 @@ local function open_companion_test()
     )
 end
 
-vim.keymap.set("n", "<leader>tc", open_companion_test, {
+vim.keymap.set("n", "<leader>ts", open_companion_test, {
     desc = "Open or create companion test",
 })

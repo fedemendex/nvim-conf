@@ -102,4 +102,43 @@ return require("packer").startup(function(use)
         "akinsho/toggleterm.nvim",
         tag = "*",
     }
+
+    -- debugging plugins
+    --
+
+    use("mfussenegger/nvim-dap")
+
+    use({
+        "rcarriga/nvim-dap-ui",
+        requires = {
+            "mfussenegger/nvim-dap",
+            "nvim-neotest/nvim-nio",
+        },
+    })
+
+    use("leoluz/nvim-dap-go")
+    use("mfussenegger/nvim-dap-python")
+
+    use({
+        "jay-babu/mason-nvim-dap.nvim",
+        requires = {
+            "williamboman/mason.nvim",
+            "mfussenegger/nvim-dap",
+        },
+    })
+
+    use({
+        "mxsdev/nvim-dap-vscode-js",
+        requires = {
+            "mfussenegger/nvim-dap",
+        },
+    })
+
+    use({
+        "theHamsta/nvim-dap-virtual-text",
+        requires = {
+            "mfussenegger/nvim-dap",
+            "nvim-treesitter/nvim-treesitter",
+        },
+    })
 end)

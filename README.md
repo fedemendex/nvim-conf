@@ -58,6 +58,7 @@ Install the files with this structure:
 └── after/
     └── plugin/
         ├── colors.lua
+        ├── debug.lua
         ├── fugitive.lua
         ├── harpoon.lua
         ├── lsp.lua
@@ -168,6 +169,12 @@ Mason automatically installs and enables:
 - `rust_analyzer`
 - `lua_ls`
 
+Mason also installs these debug adapters:
+
+- `delve` for Go
+- `debugpy` for Python
+- `js-debug-adapter` for JavaScript and TypeScript
+
 Use `:Mason` to inspect their installation status and
 `:checkhealth vim.lsp` to diagnose LSP problems.
 
@@ -249,11 +256,91 @@ Ordinary yanks also use the macOS clipboard because
 | Normal | `Space t f` | Run every test in the current file |
 | Normal | `Space t a` | Run the entire test suite |
 | Normal | `Space t t` | Run the last test again |
-| Normal | `Space t c` | Open the test file on the right of the current file, creates it if it doesnt exist | 
+| Normal | `Space t s` | Open the test file on the right of the current file, creates it if it doesnt exist | 
 
 
 `vim-test` uses the project's own test runner. The corresponding tools must
 already be available—for example `go`, `cargo`, `npm`, Vitest, or Jest.
+
+### Debugging
+
+Debugging is provided by `nvim-dap`. When a session starts, `nvim-dap-ui`
+opens automatically with:
+
+- Local variables and arguments under **Scopes**
+- Threads and stack frames
+- Watch expressions
+- Active breakpoints
+- A debug console and REPL
+- Inline variable values beside the source code
+- A small reminder showing the main debugging controls
+
+The interface and reminder close automatically when the session ends. Toggle
+them manually with `Space d u` and `Space d h`.
+
+#### Debugging a Go test
+
+1. Open the implementation and place the cursor on the line where execution
+   should pause.
+2. Press `F9` to add a breakpoint.
+3. Open the test file. `Space t c` opens or creates it in a vertical split.
+4. Put the cursor inside the test function.
+5. Press `Space d t` to debug the nearest Go test with Delve.
+6. Inspect local values in **Scopes**, or put the cursor on an expression and
+   press `Space d e`.
+7. Stop the session with `Shift-F5`.
+
+Depending on the macOS keyboard settings, the function keys may require the
+`Fn` key, for example `Fn-F9`.
+
+#### JavaScript and TypeScript
+
+Starting a JavaScript or TypeScript session presents these configurations:
+
+| Configuration | When to use it |
+|---|---|
+| **Launch current file with Node** | Start the current backend or command-line file under Node |
+| **Attach to running Node process** | Attach to an application that was started separately |
+| **Launch browser application with Vite** | Debug browser code served from `http://localhost:5173` |
+
+The configuration performs prerequisite checks before starting:
+
+- The current-file launcher verifies that `node` is available.
+- Node attach warns when no running Node process can be found.
+- Browser debugging warns when nothing is listening on port `5173` and
+  reminds you to start Vite, normally with `npm run dev`.
+
+Change the configured port in `after/plugin/debug.lua` when a project does not
+use Vite's default port.
+
+#### Debugger mappings
+
+| Mode | Keys | Action |
+|---|---|---|
+| Normal | `F9` | Toggle a breakpoint on the current line |
+| Normal | `F5` | Start debugging or continue to the next breakpoint |
+| Normal | `F10` | Step over the current line |
+| Normal | `F11` | Step into the called function |
+| Normal | `Shift-F11` | Step out of the current function |
+| Normal | `Shift-F5` | Stop the debugging session |
+| Normal/Visual | `Space d e` | Inspect the expression under the cursor or selection |
+| Normal | `Space d t` | Debug the nearest Go test |
+| Normal | `Space d u` | Toggle the debugging interface |
+| Normal | `Space d h` | Toggle the debugging-controls reminder |
+| Normal | `Space d r` | Open the debugger REPL |
+
+If a session fails for another reason, run:
+
+```vim
+:DapShowLog
+```
+
+Use `:Mason` to verify that the required adapter is installed. For example,
+the Go adapter can also be checked with:
+
+```vim
+:lua print(vim.fn.exepath("dlv"))
+```
 
 ### LSP
 
