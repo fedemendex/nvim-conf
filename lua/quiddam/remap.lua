@@ -252,3 +252,79 @@ vim.keymap.set("x", "<S-Down>", "in", {
     remap = true,
     desc = "Shrink structural selection",
 })
+
+-- opens the companion test on the right, creating it immediately if necessary
+local function companion_test_path(source)
+    local directory = vim.fn.fnamemodify(source, ":h")
+    local filename = vim.fn.fnamemodify(source, ":t")
+    local extension = vim.fn.fnamemodify(source, ":e")
+    local stem = vim.fn.fnamemodify(filename, ":r")
+
+    local candidates
+
+    if extension == "go" then
+        candidates = {
+            directory .. "/" .. stem .. "_test.go",
+        }
+    elseif extension == "js"
+        or extension == "jsx"
+        or extension == "ts"
+        or extension == "tsx"
+    then
+        candidates = {
+            directory .. "/" .. stem .. ".test." .. extension,
+            directory .. "/" .. stem .. ".spec." .. extension,
+        }
+    elseif extension == "py" then
+        candidates = {
+            directory .. "/test_" .. stem .. ".py",
+            directory .. "/" .. stem .. "_test.py",
+        }
+    else
+        return nil
+    end
+
+    -- Prefer an existing test file, including .spec files.
+    for _, path in ipairs(candidates) do
+        if vim.fn.filereadable(path) == 1 then
+            return path
+        end
+    end
+
+    -- Otherwise create the first/default convention.
+    return candidates[1]
+end
+
+local function open_companion_test()
+    local source = vim.api.nvim_buf_get_name(0)
+
+    if source == "" then
+        vim.notify("Current buffer has no filename", vim.log.levels.WARN)
+        return
+    end
+
+    local test_path = companion_test_path(source)
+
+    if not test_path then
+        vim.notify(
+            "No test-file convention for this file type",
+            vim.log.levels.WARN
+        )
+        return
+    end
+
+    if vim.fn.filereadable(test_path) == 0 then
+        vim.fn.writefile({}, test_path)
+        vim.notify(
+            "Created " .. vim.fn.fnamemodify(test_path, ":t")
+        )
+    end
+
+    vim.cmd(
+        "rightbelow vsplit " .. vim.fn.fnameescape(test_path)
+    )
+end
+
+vim.keymap.set("n", "<leader>tc", open_companion_test, {
+    desc = "Open or create companion test",
+})

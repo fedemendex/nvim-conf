@@ -249,6 +249,8 @@ Ordinary yanks also use the macOS clipboard because
 | Normal | `Space t f` | Run every test in the current file |
 | Normal | `Space t a` | Run the entire test suite |
 | Normal | `Space t t` | Run the last test again |
+| Normal | `Space t c` | Open the test file on the right of the current file, creates it if it doesnt exist | 
+
 
 `vim-test` uses the project's own test runner. The corresponding tools must
 already be available—for example `go`, `cargo`, `npm`, Vitest, or Jest.
