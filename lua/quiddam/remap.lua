@@ -83,6 +83,11 @@ vim.keymap.set("x", "<leader>p", [["_dP]], {
 
 -- Normal-mode improvements ---------------------------------------------------
 
+vim.keymap.set("n", "gb", "<cmd>edit #<CR>", {
+    silent = true,
+    desc = "Go back to previous file",
+})
+
 vim.keymap.set("n", "Y", "yg$", {
     desc = "Yank from cursor to end of line",
 })

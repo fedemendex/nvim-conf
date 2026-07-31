@@ -219,6 +219,7 @@ Notation used below:
 | Normal | `Shift-Up` / `Shift-Down` | Structural selection |
 | Normal | `Space w`| Select current word (`viw`) |
 | Normal | `Space W`| Select current whitespace delimited word (`viW`) |
+| Normal | `gb`| Go back to last page in buffer | 
 
 ### Editing and clipboard
 
