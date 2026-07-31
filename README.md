@@ -12,6 +12,7 @@ It includes:
 - A left-side file tree and bottom terminal
 - Git integration
 - Test commands
+- VS Code-style multiple cursors
 - Persistent undo and system-clipboard integration
 
 The leader key is `Space`.
@@ -241,6 +242,22 @@ Notation used below:
 Ordinary yanks also use the macOS clipboard because
 `clipboard=unnamedplus` is enabled.
 
+### Multiple cursors
+
+Multiple cursors are provided by `multicursor.nvim`. 
+
+
+| Mode | Keys | Action |
+|---|---|---|
+| Normal/Visual | `Option-Up` | Add a cursor on the line above |
+| Normal/Visual | `Option-Down` | Add a cursor on the line below |
+| Multiple cursors | `Esc` | Clear the extra cursors |
+
+After adding cursors, insert, change, or delete text normally and the operation
+is applied at every cursor. Terminal applications do not reliably receive
+macOS Command-key combinations, so this configuration uses Option instead of
+the VS Code `Cmd-Option-Up` and `Cmd-Option-Down` bindings.
+
 ### Go helpers
 
 | Mode | Keys | Action |
@@ -417,7 +434,7 @@ the mappings if they are not wanted.
 | `:lua vim.print(vim.lsp.get_clients({ bufnr = 0 }))` | Show LSP clients attached to the current buffer |
 | `:qa` | Quit all windows if there are no unsaved changes |
 | `:wqa` | Save all buffers and quit |
-| `:qa![118;1:3u` | Discard unsaved changes and quit |
+| `:qa![118;1:3u` | Discard unsaved changes and quit |
 
 ## Version-control notes
 

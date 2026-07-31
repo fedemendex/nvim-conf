@@ -141,4 +141,26 @@ return require("packer").startup(function(use)
             "nvim-treesitter/nvim-treesitter",
         },
     })
+    -- Multi cursor stuff
+    --
+    use {
+        "jake-stewart/multicursor.nvim",
+        branch = "1.0",
+        config = function()
+            local mc = require("multicursor-nvim")
+            mc.setup()
+
+            vim.keymap.set({ "n", "x" }, "<M-Up>", function()
+                mc.lineAddCursor(-1)
+            end)
+
+            vim.keymap.set({ "n", "x" }, "<M-Down>", function()
+                mc.lineAddCursor(1)
+            end)
+
+            mc.addKeymapLayer(function(map)
+                map("n", "<Esc>", mc.clearCursors)
+            end)
+        end,
+    }
 end)
