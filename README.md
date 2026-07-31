@@ -258,6 +258,18 @@ is applied at every cursor. Terminal applications do not reliably receive
 macOS Command-key combinations, so this configuration uses Option instead of
 the VS Code `Cmd-Option-Up` and `Cmd-Option-Down` bindings.
 
+Sample workflow:
+
+```
+POSTGRES_USER=patchamama
+POSTGRES_PASSWORD=patchamama
+POSTGRES_DB=patchamama
+```
+
+1. Go to the first line, and holding Opt+Down will add the multi cursor to each desired line.
+2. To select up to but not including the `_`, in visual mode you do `t_`.
+3. To replace the text with something else, `c MYSQL Esc`
+
 ### Go helpers
 
 | Mode | Keys | Action |
