@@ -239,6 +239,8 @@ Notation used below:
 | Visual | `Space r` | Prepare replacement restricted to the visual selection |
 | Normal | `Space x` | Make the current file executable |
 | Normal | `Space Space` | Source/reload the current Lua file |
+| Visual | `Space tu` | To uppercase |
+| Visual | `Space tl` | To lowercase |
 
 Ordinary yanks also use the macOS clipboard because
 `clipboard=unnamedplus` is enabled.

@@ -83,6 +83,9 @@ vim.keymap.set("x", "<leader>p", [["_dP]], {
 
 -- Normal-mode improvements ---------------------------------------------------
 
+vim.keymap.set("v", "<leader>tu", "U", { desc = "Convert selection to Uppercase" })
+vim.keymap.set("v", "<leader>tp", "u", { desc = "Convert selection to Lowercase" })
+
 vim.keymap.set("n", "gb", "<cmd>edit #<CR>", {
     silent = true,
     desc = "Go back to previous file",
