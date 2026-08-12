@@ -1,18 +1,50 @@
--- function ColorMyPencils(color)
---   color = color or "rose-pine"
---   vim.cmd.colorscheme(color)
+require("tokyonight").setup({
+    style = "moon",
 
---  vim.api.nvim_set_hl(0, "Normal",      { bg = "none" })
---  vim.api.nvim_set_hl(0, "NormalNC",    { bg = "none" })
---  vim.api.nvim_set_hl(0, "NormalFloat", { bg = "none" })
---  vim.api.nvim_set_hl(0, "SignColumn",  { bg = "none" })
---  vim.api.nvim_set_hl(0, "EndOfBuffer", { bg = "none" })
+    -- Built-in inactive-window dimming.
+    dim_inactive = true,
 
---end
+    on_highlights = function(hl, c)
+        -- Harpoon uses Neovim's standard tabline groups.
+        hl.TabLine = {
+            fg = c.fg_dark,
+            bg = c.bg_dark,
+        }
 
--- ColorMyPencils()
-require("rose-pine").setup({
-    variant = "main",
+        hl.TabLineSel = {
+            fg = c.orange,
+            bg = c.bg_highlight,
+            bold = true,
+        }
+
+        hl.TabLineFill = {
+            bg = c.bg_dark,
+        }
+
+        -- Make the current line substantially easier to find.
+        hl.CursorLine = {
+            bg = c.bg_highlight,
+        }
+
+        -- More obvious line number on the active line.
+        hl.CursorLineNr = {
+            fg = c.orange,
+            bold = true,
+        }
+
+        -- Stronger visual selection.
+        hl.Visual = {
+            bg = c.bg_search,
+        }
+
+        -- Clearer divider between windows.
+        hl.WinSeparator = {
+            fg = c.blue,
+            bold = true,
+        }
+    end,
 })
 
-vim.cmd.colorscheme("rose-pine-moon")
+vim.cmd.colorscheme("tokyonight-moon")
+
+vim.opt.cursorline = true
