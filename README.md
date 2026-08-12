@@ -207,7 +207,7 @@ Notation used below:
 | Normal | `Space o` | Find files with Telescope |
 | Normal | `Space g i t` | Find Git-tracked files with Telescope |
 | Normal | `Space g` | Prompt for text and grep the project |
-| Normal | `Space p v` | Toggle the file tree |
+| Normal | `Space n` | Toggle the file tree |
 | Normal | `Space a` | Add the current file to Harpoon |
 | Normal | `Space h` | Toggle the Harpoon menu |
 | Normal | `Space 1` … `Space 4` | Open Harpoon file 1 … 4 |

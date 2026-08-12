@@ -40,3 +40,7 @@ vim.g.mapleader = " "
 -- Highlight the entire line containing the cursor
 vim.opt.cursorline = true
 vim.opt.cursorcolumn = true
+
+vim.api.nvim_set_hl(0, "CursorLine", {
+    bg = "#302d49",
+})

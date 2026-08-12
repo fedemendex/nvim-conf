@@ -145,3 +145,36 @@ vim.api.nvim_create_autocmd("VimEnter", {
         end)
     end,
 })
+
+-- Make the focused window visually obvious.
+local function set_window_focus()
+    local active_window = vim.api.nvim_get_current_win()
+
+    for _, window in ipairs(vim.api.nvim_list_wins()) do
+        if window == active_window then
+            vim.wo[window].winhighlight =
+            "Normal:Normal,NormalNC:Normal"
+        else
+            vim.wo[window].winhighlight =
+            "Normal:InactiveWindow,NormalNC:InactiveWindow"
+        end
+    end
+end
+
+-- Adjust this background to match your colour scheme.
+vim.api.nvim_set_hl(0, "InactiveWindow", {
+    bg = "#191827",
+})
+
+vim.api.nvim_create_autocmd({
+    "WinEnter",
+    "WinLeave",
+    "BufWinEnter",
+    "TermOpen",
+}, {
+    callback = function()
+        vim.schedule(set_window_focus)
+    end,
+})
+
+vim.schedule(set_window_focus)
