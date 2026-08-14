@@ -199,6 +199,11 @@ vim.keymap.set(
     }
 )
 
+vim.keymap.set("i", "/**", "/**<CR><CR>*/<Up>", {
+    noremap = true,
+    desc = "Expand block comment",
+})
+
 -- External tools -------------------------------------------------------------
 
 vim.keymap.set(
