@@ -8,6 +8,7 @@ It includes:
 - LSP support and completion through Mason, `nvim-lspconfig`, and `nvim-cmp`
 - Treesitter syntax highlighting
 - Telescope file and text search
+- Flash label-based navigation
 - Harpoon file navigation
 - A left-side file tree and bottom terminal
 - Git integration
@@ -16,6 +17,52 @@ It includes:
 - Persistent undo and system-clipboard integration
 
 The leader key is `Space`.
+
+## Fast navigation with Flash
+
+Flash is the main tool for quickly moving to visible text. Press `s`, type as
+much of the target text as needed, then press the coloured label displayed next
+to the match you want:
+
+```text
+s -> vim -> displayed label
+```
+
+Flash jumps directly to the selected match; `;` and `,` do not cycle through
+the results from `s`. Use normal Vim search when sequential navigation is more
+useful:
+
+```text
+/vim<Enter>    search for "vim"
+n              next match
+N              previous match
+```
+
+The `f`, `F`, `t`, and `T` motions search for **exactly one character**:
+
+| Keys | Action |
+|---|---|
+| `fv` | Jump forward onto the next `v` |
+| `Fv` | Jump backward onto the previous `v` |
+| `tv` | Jump forward to immediately before the next `v` |
+| `Tv` | Jump backward to immediately after the previous `v` |
+| `;` | Repeat the last `f`/`F`/`t`/`T` motion |
+| `,` | Repeat that character motion in the opposite direction |
+
+Typing `fvim` does **not** search for the word `vim`: `fv` performs the
+one-character motion and the remaining keys are interpreted as new commands.
+Use `s` for a multi-character direct jump and `/` when the goal is to step
+through every match.
+
+Additional Flash mappings:
+
+| Mode | Keys | Action |
+|---|---|---|
+| Normal/Visual/Operator-pending | `s` | Search visible text and jump using a label |
+| Normal/Visual/Operator-pending | `S` | Select or operate on a Treesitter syntax node |
+| Operator-pending | `r` | Perform an operation at a remote Flash target |
+| Visual/Operator-pending | `R` | Treesitter-aware text search |
+| Command-line | `Ctrl-s` | Toggle Flash labels during `/` or `?` search |
 
 
 ## Required tmux setup
