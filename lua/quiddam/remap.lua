@@ -107,6 +107,60 @@ vim.keymap.set("n", "<C-u>", "<C-u>zz", {
     desc = "Scroll half-page up and centre cursor",
 })
 
+-- Scrolling on the same fingers as j/k. vim-tmux-navigator claims <C-j> and
+-- <C-k> from its own plugin file, which loads after this one, so its default
+-- mappings are disabled and the ones worth keeping are declared below.
+vim.g.tmux_navigator_no_mappings = 1
+
+vim.keymap.set("n", "<C-j>", "<C-d>zz", {
+    desc = "Scroll half-page down and centre cursor",
+})
+
+vim.keymap.set("n", "<C-k>", "<C-u>zz", {
+    desc = "Scroll half-page up and centre cursor",
+})
+
+-- Movement between Neovim splits and tmux panes.
+local navigations = {
+    h = "TmuxNavigateLeft",
+    j = "TmuxNavigateDown",
+    k = "TmuxNavigateUp",
+    l = "TmuxNavigateRight",
+}
+
+-- <leader> is the primary way to move in all four directions. <C-w> keeps the
+-- familiar prefix working and gains the same crossing into tmux panes.
+for key, command in pairs(navigations) do
+    for _, prefix in ipairs({ "<leader>", "<C-w>" }) do
+        vim.keymap.set("n", prefix .. key, "<cmd>" .. command .. "<CR>", {
+            silent = true,
+            desc = "Navigate: " .. command,
+        })
+    end
+end
+
+-- <C-j> and <C-k> now scroll, so only the horizontal pair stays on a single
+-- chord, together with the jump back to the previous pane.
+for _, key in ipairs({ "h", "l" }) do
+    local chord = "<C-" .. key .. ">"
+    local command = navigations[key]
+
+    vim.keymap.set("n", chord, "<cmd>" .. command .. "<CR>", {
+        silent = true,
+        desc = "Navigate: " .. command,
+    })
+
+    vim.keymap.set("t", chord, [[<C-\><C-n><cmd>]] .. command .. "<CR>", {
+        silent = true,
+        desc = "Navigate: " .. command,
+    })
+end
+
+vim.keymap.set("n", "<C-\\>", "<cmd>TmuxNavigatePrevious<CR>", {
+    silent = true,
+    desc = "Navigate: TmuxNavigatePrevious",
+})
+
 vim.keymap.set("n", "n", "nzzzv", {
     desc = "Next search result and centre cursor",
 })
@@ -169,12 +223,13 @@ vim.keymap.set("n", "<leader>cp", "<cmd>cprev<CR>zz", {
     desc = "Previous quickfix result",
 })
 
-vim.keymap.set("n", "<leader>k", "<cmd>lnext<CR>zz", {
+-- Bracket pairs, matching ]d/[d for diagnostics and ]h/[h for Git hunks.
+vim.keymap.set("n", "]l", "<cmd>lnext<CR>zz", {
     silent = true,
     desc = "Next location-list result",
 })
 
-vim.keymap.set("n", "<leader>j", "<cmd>lprev<CR>zz", {
+vim.keymap.set("n", "[l", "<cmd>lprev<CR>zz", {
     silent = true,
     desc = "Previous location-list result",
 })
@@ -250,19 +305,22 @@ end, {
 })
 
 
--- Haram vim remaps (visual select)
-vim.keymap.set("n", "<S-Up>", "van", {
-    remap = true,
-    desc = "Start structural selection",
-})
+-- Structural selection -------------------------------------------------------
 
-vim.keymap.set("x", "<S-Up>", "an", {
-    remap = true,
+-- <Tab> is <C-i> in Normal mode, which would otherwise move forward in the
+-- jump list. nvim-tree and Telescope map <Tab> in their own buffers, so those
+-- windows keep their usual behaviour.
+vim.keymap.set({ "n", "x" }, "<Tab>", function()
+    require("quiddam.structural").expand()
+end, {
+    silent = true,
     desc = "Expand structural selection",
 })
 
-vim.keymap.set("x", "<S-Down>", "in", {
-    remap = true,
+vim.keymap.set("x", "<S-Tab>", function()
+    require("quiddam.structural").shrink()
+end, {
+    silent = true,
     desc = "Shrink structural selection",
 })
 

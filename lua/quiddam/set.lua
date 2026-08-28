@@ -37,6 +37,18 @@ vim.opt.colorcolumn = "80"
 
 vim.g.mapleader = " "
 
+-- Sessions restore the window layout only. Terminals and blank windows are
+-- deliberately excluded so a restored layout matches what was being edited.
+vim.opt.sessionoptions = {
+    "buffers",
+    "curdir",
+    "folds",
+    "help",
+    "tabpages",
+    "winsize",
+    "winpos",
+}
+
 -- Highlight the entire line containing the cursor
 vim.opt.cursorline = true
 vim.opt.cursorcolumn = true

@@ -1,4 +1,5 @@
 local windows = require("quiddam.windows")
+local session = require("quiddam.session")
 
 -- nvim-tree ---------------------------------------------------------------
 
@@ -122,6 +123,14 @@ vim.api.nvim_create_autocmd("VimEnter", {
 
     callback = function()
         vim.schedule(function()
+            -- Restoring only makes sense when no files were given to open.
+            if session.started_without_files() and session.restore() then
+                windows.focus_editor()
+                windows.remember_editor()
+
+                return
+            end
+
             local editor_window = vim.api.nvim_get_current_win()
 
             -- Remember the window where files should be opened.
@@ -130,19 +139,24 @@ vim.api.nvim_create_autocmd("VimEnter", {
             -- Open the tree on the left.
             vim.cmd("NvimTreeOpen")
 
-            -- Return to the editor before opening the terminal.
             if vim.api.nvim_win_is_valid(editor_window) then
                 vim.api.nvim_set_current_win(editor_window)
             end
-
-            -- splitbelow=true keeps this beneath the editor.
-            vim.cmd("1ToggleTerm direction=horizontal")
 
             -- Start with nvim-tree focused.
             vim.schedule(function()
                 vim.cmd("NvimTreeFocus")
             end)
         end)
+    end,
+})
+
+-- Record the layout so the next start in this directory can rebuild it.
+vim.api.nvim_create_autocmd("VimLeavePre", {
+    group = startup_group,
+
+    callback = function()
+        session.save()
     end,
 })
 

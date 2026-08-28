@@ -16,8 +16,14 @@ local mark = require("harpoon.mark")
 local ui = require("harpoon.ui")
 local windows = require("quiddam.windows")
 
-vim.keymap.set("n", "<leader>a", mark.add_file)
-vim.keymap.set("n", "<leader>h", ui.toggle_quick_menu)
+vim.keymap.set("n", "<leader>a", mark.add_file, {
+    desc = "Add current file to Harpoon",
+})
+
+-- <leader>h moves between splits, so the menu lives on m for "marks".
+vim.keymap.set("n", "<leader>m", ui.toggle_quick_menu, {
+    desc = "Toggle Harpoon menu",
+})
 
 for index = 1, 9 do
     vim.keymap.set("n", "<leader>" .. index, function()

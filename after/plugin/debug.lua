@@ -212,12 +212,12 @@ local function open_debug_help()
     local lines = {
         " DEBUGGING",
         "",
-        " F5        Continue/start",
-        " F9        Toggle breakpoint",
-        " F10       Step over",
-        " F11       Step into",
-        " Shift-F11 Step out",
-        " Shift-F5  Stop",
+        " Space dc  Continue/start",
+        " Space db  Toggle breakpoint",
+        " Space dn  Step over",
+        " Space di  Step into",
+        " Space do  Step out",
+        " Space dq  Stop",
         " Space de  Inspect value",
         " Space dh  Toggle this help",
     }
@@ -303,29 +303,56 @@ dap_listeners.after.event_exited.debug_error_message =
 
 -- Familiar debugger controls ------------------------------------------------
 
-vim.keymap.set("n", "<F5>", dap.continue, {
-    desc = "Debug: start or continue",
-})
+-- Keyboards without a function row cannot reach F5-F11 without a layer, so the
+-- <leader>d chords are the primary bindings and the F-keys remain as aliases.
+local controls = {
+    {
+        chord = "<leader>dc",
+        fkey = "<F5>",
+        action = dap.continue,
+        desc = "Debug: start or continue",
+    },
+    {
+        chord = "<leader>db",
+        fkey = "<F9>",
+        action = dap.toggle_breakpoint,
+        desc = "Debug: toggle breakpoint",
+    },
+    {
+        chord = "<leader>dn",
+        fkey = "<F10>",
+        action = dap.step_over,
+        desc = "Debug: step over",
+    },
+    {
+        chord = "<leader>di",
+        fkey = "<F11>",
+        action = dap.step_into,
+        desc = "Debug: step into",
+    },
+    {
+        chord = "<leader>do",
+        fkey = "<S-F11>",
+        action = dap.step_out,
+        desc = "Debug: step out",
+    },
+    {
+        chord = "<leader>dq",
+        fkey = "<S-F5>",
+        action = dap.terminate,
+        desc = "Debug: terminate",
+    },
+}
 
-vim.keymap.set("n", "<F9>", dap.toggle_breakpoint, {
-    desc = "Debug: toggle breakpoint",
-})
+for _, control in ipairs(controls) do
+    vim.keymap.set("n", control.chord, control.action, {
+        desc = control.desc,
+    })
 
-vim.keymap.set("n", "<F10>", dap.step_over, {
-    desc = "Debug: step over",
-})
-
-vim.keymap.set("n", "<F11>", dap.step_into, {
-    desc = "Debug: step into",
-})
-
-vim.keymap.set("n", "<S-F11>", dap.step_out, {
-    desc = "Debug: step out",
-})
-
-vim.keymap.set("n", "<S-F5>", dap.terminate, {
-    desc = "Debug: terminate",
-})
+    vim.keymap.set("n", control.fkey, control.action, {
+        desc = control.desc,
+    })
+end
 
 vim.keymap.set({ "n", "x" }, "<leader>de", function()
     dapui.eval()
