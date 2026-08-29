@@ -3,6 +3,12 @@
 Personal Neovim configuration for Go, Rust, Python, TypeScript/JavaScript,
 and Lua development on macOS.
 
+**Disclaimer**:
+
+This configuration is optimized for my personal workflow, which includes using the 
+ZSA Voyager split keyboard so substantial refactoring might be required to adapt
+to someone else's preferences.
+
 It includes:
 
 - LSP support and completion through Mason, `nvim-lspconfig`, and `nvim-cmp`
