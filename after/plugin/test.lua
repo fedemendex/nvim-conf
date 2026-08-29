@@ -1,38 +1,49 @@
+local windows = require("quiddam.windows")
+
+-- Terminal 1 is the bottom terminal shared with <leader>ter. It is no longer
+-- opened at startup, so the test strategy creates it on demand.
+local function bottom_terminal()
+    local terminals = require("toggleterm.terminal")
+
+    return terminals.get(1, true)
+        or terminals.Terminal:new({
+            id = 1,
+            direction = "horizontal",
+        })
+end
+
 local function send_test_to_bottom_terminal(command)
+    -- Create the split from the editor, not from nvim-tree.
+    windows.focus_editor()
+
     local editor_window = vim.api.nvim_get_current_win()
+    local terminal = bottom_terminal()
 
-    for _, buffer in ipairs(vim.api.nvim_list_bufs()) do
-        local is_terminal_one =
-            vim.bo[buffer].filetype == "toggleterm"
-            and vim.b[buffer].toggle_number == 1
-
-        if is_terminal_one then
-            local channel = vim.b[buffer].terminal_job_id
-
-            if not channel or channel <= 0 then
-                break
-            end
-
-            -- Reveal Terminal 1 when it is hidden.
-            if vim.fn.bufwinid(buffer) == -1 then
-                vim.cmd("1ToggleTerm direction=horizontal")
-            end
-
-            -- Send the exact command without reparsing its quotes.
-            vim.api.nvim_chan_send(channel, command .. "\n")
-
-            -- ToggleTerm may change focus asynchronously, so restore it afterward.
-            vim.schedule(function()
-                if vim.api.nvim_win_is_valid(editor_window) then
-                    vim.api.nvim_set_current_win(editor_window)
-                end
-            end)
-
-            return
-        end
+    -- Reveal Terminal 1 when it is closed, starting its shell if needed.
+    if not terminal:is_open() then
+        terminal:open(nil, "horizontal")
     end
 
-    vim.notify("ToggleTerm 1 is not running", vim.log.levels.ERROR)
+    local channel = terminal.job_id
+
+    if not channel or channel <= 0 then
+        vim.notify(
+            "The bottom terminal has no running shell",
+            vim.log.levels.ERROR
+        )
+
+        return
+    end
+
+    -- Send the exact command without reparsing its quotes.
+    vim.api.nvim_chan_send(channel, command .. "\n")
+
+    -- ToggleTerm may change focus asynchronously, so restore it afterward.
+    vim.schedule(function()
+        if vim.api.nvim_win_is_valid(editor_window) then
+            vim.api.nvim_set_current_win(editor_window)
+        end
+    end)
 end
 
 _G.run_vim_test_in_bottom_terminal = send_test_to_bottom_terminal

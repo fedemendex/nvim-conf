@@ -407,6 +407,10 @@ the trigger in insert mode and press `Tab` to expand it, then `Tab` and
 `vim-test` uses the project's own test runner. The corresponding tools must
 already be available—for example `go`, `cargo`, `npm`, Vitest, or Jest.
 
+Tests run in the same bottom terminal that `Space t e r` toggles. It does not
+have to be open first: the test commands create or reveal it as needed, run the
+command there, and leave the cursor in the editor.
+
 ### Debugging
 
 Debugging is provided by `nvim-dap`. When a session starts, `nvim-dap-ui`
@@ -553,9 +557,10 @@ Inside the tree, `Space a` adds the file under the cursor to Harpoon; all the
 other default nvim-tree mappings are preserved.
 
 `Space t e r` opens the terminal horizontally at approximately one quarter of
-the Neovim window height. It is never opened automatically. From terminal normal mode, use `Ctrl-w k` to move into the
-editor and `Ctrl-w j` to move back into the terminal; press `i` to resume
-typing in it.
+the Neovim window height. It is not opened at startup and is not restored with
+a session; running a test opens it on demand. From terminal normal mode, use
+`Ctrl-w k` to move into the editor and `Ctrl-w j` to move back into the
+terminal; press `i` to resume typing in it.
 
 ## Sessions
 
