@@ -60,7 +60,27 @@ require("nvim-tree").setup({
     },
 })
 
-vim.keymap.set("n", "<leader>n", "<cmd>NvimTreeToggle<CR>", {
+vim.keymap.set("n", "<leader>n", function()
+    -- VS Code has its own explorer, so the tree is never drawn there.
+    --
+    -- toggleSidebarVisibility is the command that matches NvimTreeToggle:
+    -- it shows and hides. workbench.view.explorer looks like the obvious
+    -- choice but is not a visibility toggle -- with the explorer already
+    -- visible and focused it just returns focus to the editor group, so the
+    -- pane can never be closed with it. Swap it in if focus toggling is
+    -- wanted instead of showing and hiding.
+    if vim.g.vscode then
+        local ok, vscode = pcall(require, "vscode")
+
+        if ok then
+            vscode.action("workbench.action.toggleSidebarVisibility")
+        end
+
+        return
+    end
+
+    vim.cmd("NvimTreeToggle")
+end, {
     silent = true,
     desc = "Toggle file tree",
 })
