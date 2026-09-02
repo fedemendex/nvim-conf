@@ -88,28 +88,26 @@ require("toggleterm").setup({
     end,
 })
 
-vim.keymap.set("n", "<leader>ter", function()
-    -- VS Code owns the panel, so toggle its integrated terminal rather than
-    -- opening a ToggleTerm split that vscode-neovim cannot render.
-    if vim.g.vscode then
-        local ok, vscode = pcall(require, "vscode")
+if vim.g.vscode then
+    local vscode = require("vscode")
 
-        if ok then
-            vscode.action("workbench.action.terminal.toggleTerminal")
-        end
+    vim.keymap.set("n", "<leader>ter", function()
+        vscode.action("workbench.action.terminal.focus")
+    end, {
+        silent = true,
+        desc = "Focus VS Code terminal",
+    })
+else
+    vim.keymap.set("n", "<leader>ter", function()
+        -- Create the terminal from the editor rather than nvim-tree.
+        windows.focus_editor()
 
-        return
-    end
-
-    -- Ensures the terminal split is created from the editor,
-    -- not from nvim-tree.
-    windows.focus_editor()
-
-    vim.cmd("1ToggleTerm direction=horizontal")
-end, {
-    silent = true,
-    desc = "Toggle bottom terminal",
-})
+        vim.cmd("1ToggleTerm direction=horizontal")
+    end, {
+        silent = true,
+        desc = "Toggle bottom terminal",
+    })
+end
 
 local terminal_group = vim.api.nvim_create_augroup(
     "ToggleTermMappings",
