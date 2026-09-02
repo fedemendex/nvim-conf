@@ -1,5 +1,53 @@
 local windows = require("quiddam.windows")
 
+-- VS Code ---------------------------------------------------------------------
+
+-- vscode-neovim has no Neovim windows to draw a terminal into, and shelling a
+-- command out resolves paths against whatever directory the shell happens to
+-- sit in. VS Code's own runner resolves package paths from the workspace root
+-- and reports into the Test Results panel, so under VS Code the whole vim-test
+-- and ToggleTerm path below is skipped and the editor does the work.
+if vim.g.vscode then
+    local function run(command)
+        return function()
+            local ok, vscode = pcall(require, "vscode")
+
+            if not ok then
+                vim.notify(
+                    "vim.g.vscode is set but the vscode module is unavailable",
+                    vim.log.levels.ERROR
+                )
+
+                return
+            end
+
+            vscode.action(command)
+        end
+    end
+
+    -- These are the editor-agnostic Test Explorer commands, so they keep
+    -- working for the Go, TypeScript, and Python projects alike. For the Go
+    -- extension's "Running tool: ..." output tab instead, swap these for
+    -- go.test.cursor / go.test.file / go.test.workspace / go.test.previous.
+    local tests = {
+        { "<leader>tn", "testing.runAtCursor", "Run nearest test" },
+        { "<leader>tf", "testing.runCurrentFile", "Run current test file" },
+        { "<leader>ta", "testing.runAll", "Run entire test suite" },
+        { "<leader>tl", "testing.reRunLastRun", "Run last test again" },
+    }
+
+    for _, test in ipairs(tests) do
+        vim.keymap.set("n", test[1], run(test[2]), {
+            silent = true,
+            desc = test[3],
+        })
+    end
+
+    return
+end
+
+-- Standalone Neovim -----------------------------------------------------------
+
 -- Terminal 1 is the bottom terminal shared with <leader>ter. It is no longer
 -- opened at startup, so the test strategy creates it on demand.
 local function bottom_terminal()
@@ -46,11 +94,11 @@ local function send_test_to_bottom_terminal(command)
     end)
 end
 
-_G.run_vim_test_in_bottom_terminal = send_test_to_bottom_terminal
+_G.run_vim_test_command = send_test_to_bottom_terminal
 
 vim.cmd([[
 function! VimTestBottomTerminal(command) abort
-    call v:lua.run_vim_test_in_bottom_terminal(a:command)
+    call v:lua.run_vim_test_command(a:command)
 endfunction
 
 let g:test#custom_strategies = {

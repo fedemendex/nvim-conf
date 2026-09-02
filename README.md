@@ -24,6 +24,7 @@ It includes:
 - Go snippets through LuaSnip
 - VS Code-style multiple cursors
 - Persistent undo and system-clipboard integration
+- A VS Code mode that reuses the same keys through `vscode-neovim`
 
 The leader key is `Space`.
 
@@ -286,19 +287,31 @@ Notation used below:
 | Normal | `Ctrl-a` | Select the whole file (`ggVG`) |
 | Normal | `gb`| Go back to last page in buffer |
 | Normal | `Space ?` | Search every keyboard mapping with Telescope |
-| Normal | `Ctrl-j` / `Ctrl-k` | Half-page down/up and centre the cursor |
-| Normal | `Space` + `h`/`j`/`k`/`l` | Move between splits and tmux panes |
+| Normal/Visual | `Space j` / `Space k` | Half-page down/up and centre the cursor |
+| Normal/Visual/Operator | `Space h` / `Space l` | Jump to the first non-blank character / the end of the line |
+| Normal/Insert/Visual/Terminal | `Ctrl-h`/`Ctrl-j`/`Ctrl-k`/`Ctrl-l` | Move between splits and tmux panes |
 | Normal | `Ctrl-w` + `h`/`j`/`k`/`l` | The same movement on the familiar prefix |
-| Normal | `Ctrl-h` / `Ctrl-l` | Move left/right in a single chord |
 | Normal | `Ctrl-\` | Jump back to the previous pane |
 
-Movement between windows is deliberately available three ways: `Space h j k l`
-as the primary set, `Ctrl-w` for anyone reaching for the standard Vim prefix,
-and `Ctrl-h`/`Ctrl-l` as single chords. All of them cross into tmux panes
-rather than stopping at the edge of Neovim.
+Window movement lives on `Ctrl-h/j/k/l`, and it is the one binding chosen for
+a reason outside Neovim: VS Code cannot bind a leader-key sequence, so `Ctrl`
+is the only prefix that can mean the same thing in both editors. See
+[VS Code](#vs-code). `Ctrl-w` keeps the standard Vim prefix working as a second
+way in. Both cross into tmux panes rather than stopping at the edge of Neovim.
 
-`Ctrl-j` and `Ctrl-k` scroll rather than navigate, which is why the vertical
-pair is not offered as a single chord.
+The `Ctrl` chords work in every mode: Normal, Insert, Visual, and Terminal.
+The last three drop back to Normal mode first, so a chord never carries an
+insertion, a selection, or a shell across into the target split.
+
+That moved half-page scrolling off `Ctrl-j`/`Ctrl-k` and onto `Space j` /
+`Space k`, with the horizontal half of the same row going to the ends of the
+line. `Ctrl-d` and `Ctrl-u` still scroll as well.
+
+The leader row is Normal, Visual, and operator-pending only, so `d Space l`
+deletes to the end of the line. It is deliberately absent from Insert and
+Terminal mode, where the leader key is a literal space: a `Space j` mapping
+there would swallow every `j` typed after a space and stall every other space
+for `timeoutlen`.
 
 ### Editing and clipboard
 
@@ -324,6 +337,10 @@ pair is not offered as a single chord.
 
 Ordinary yanks also use the macOS clipboard because
 `clipboard=unnamedplus` is enabled.
+
+Under VS Code, Normal-mode `Space r` opens the find/replace widget seeded with
+the word under the cursor instead of a `:%s` command line; the Visual-mode
+mapping is a substitute in both editors. See [VS Code](#vs-code).
 
 ### Structural selection
 
@@ -416,6 +433,9 @@ already be available—for example `go`, `cargo`, `npm`, Vitest, or Jest.
 Tests run in the same bottom terminal that `Space t e r` toggles. It does not
 have to be open first: the test commands create or reveal it as needed, run the
 command there, and leave the cursor in the editor.
+
+Under VS Code the same four keys drive VS Code's Test Explorer instead; see
+[VS Code](#vs-code).
 
 ### Debugging
 
@@ -512,7 +532,7 @@ the Go adapter can also be checked with:
 | Normal | `K` | Show hover documentation |
 | Normal | `Space d s` | Find symbols in the current document |
 | Normal | `Space w s` | Find symbols in the workspace |
-| Normal | `Space r n` | Rename the symbol under the cursor |
+| Normal | `Space r n` | Rename the symbol under the cursor (also works in VS Code) |
 | Normal/Visual | `Space c a` | Show code actions |
 | Normal | `Space q f` | Apply the first available quick fix |
 | Normal | `Space o i` | Organise imports |
@@ -559,14 +579,17 @@ shell (including hidden ones), and then runs `:qa`. If a write fails, quitting
 stops so that changes are never silently discarded. Use `:qa!` to discard
 changes and quit without saving.
 
-Inside the tree, `Space a` adds the file under the cursor to Harpoon; all the
-other default nvim-tree mappings are preserved.
+Inside the tree, `Space a` adds the file under the cursor to Harpoon. The other
+default nvim-tree mappings are preserved, except `Ctrl-k`: the tree binds it to
+its node-info popup, which would shadow the movement chord and leave no way to
+step up out of the tree. Node info is still reachable from the tree's own `g?`
+help.
 
 `Space t e r` opens the terminal horizontally at approximately one quarter of
 the Neovim window height. It is not opened at startup and is not restored with
-a session; running a test opens it on demand. From terminal normal mode, use
-`Ctrl-w k` to move into the editor and `Ctrl-w j` to move back into the
-terminal; press `i` to resume typing in it.
+a session; running a test opens it on demand. `Ctrl-k` moves into the editor
+and `Ctrl-j` moves back into the terminal, from terminal-input mode as well as
+terminal-normal mode; press `i` to resume typing in it.
 
 ## Sessions
 
@@ -597,6 +620,72 @@ to keep.
 
 If a directory has no session yet, Neovim starts with the file tree open and
 focused, which was the previous behaviour minus the terminal.
+
+Sessions are neither saved nor restored under VS Code, which owns its own
+layout; see [VS Code](#vs-code).
+
+## VS Code
+
+The configuration also runs inside VS Code through the
+[vscode-neovim](https://marketplace.visualstudio.com/items?itemName=asvetliakov.vscode-neovim)
+extension, which sets `vim.g.vscode`. Anything that draws its own windows or
+duplicates what VS Code already provides is skipped there, and a few mappings
+are redirected to the equivalent VS Code command so that the same keys do the
+same job in both editors.
+
+Skipped under VS Code:
+
+| Where | What is skipped | Why |
+|---|---|---|
+| `after/plugin/lsp.lua` | The entire file | VS Code supplies its own LSP, completion, and diagnostics |
+| `after/plugin/test.lua` | The `vim-test` and ToggleTerm path | VS Code's runner resolves package paths from the workspace root and reports into the Test Results panel |
+| `after/plugin/ui.lua` | Session save/restore and the startup file tree | VS Code owns the window layout and the explorer |
+| `lua/quiddam/remap.lua` | Go-to-definition and `Space f` formatting | VS Code provides both |
+
+Redirected to a VS Code command:
+
+| Keys | Action in VS Code |
+|---|---|
+| `Space t e r` | `workbench.action.terminal.toggleTerminal` |
+| `Space t n` | `testing.runAtCursor` |
+| `Space t f` | `testing.runCurrentFile` |
+| `Space t a` | `testing.runAll` |
+| `Space t l` | `testing.reRunLastRun` |
+| `Space r n` | `editor.action.rename` |
+| `Space r` | `editor.actions.findWithArgs`, seeded with the word under the cursor |
+
+`Space r` passes `matchWholeWord` and `isCaseSensitive`, so the find widget
+matches the same occurrences as the `\<`, `\>`, and `I` of the `:%s` command
+standalone Neovim builds. `Space r n` is declared in `remap.lua` rather than
+`lsp.lua`, because that file is skipped wholesale; standalone Neovim still gets
+the LSP rename as a buffer-local mapping when a server attaches.
+
+The test mappings use the editor-agnostic Test Explorer commands, so they work
+for Go, TypeScript, and Python alike. To get the Go extension's own output tab
+instead, swap them for `go.test.cursor`, `go.test.file`, `go.test.workspace`,
+and `go.test.previous` in `after/plugin/test.lua`.
+
+### Window movement in VS Code
+
+Window movement is **not** handled by this configuration under VS Code. Bind it
+in VS Code's `keybindings.json` instead:
+
+```json
+{ "key": "ctrl+h", "command": "workbench.action.navigateLeft" },
+{ "key": "ctrl+j", "command": "workbench.action.navigateDown" },
+{ "key": "ctrl+k", "command": "workbench.action.navigateUp" },
+{ "key": "ctrl+l", "command": "workbench.action.navigateRight" }
+```
+
+vscode-neovim does forward `Ctrl-h/j/k/l` to Neovim by default (all four are
+in `vscode-neovim.ctrlKeysForNormalMode`), but a keybinding defined in VS Code
+takes precedence, so these four win and the `TmuxNavigate` mappings never fire
+there. Leaving the `when` clause off makes them work in the terminal panel and
+the explorer too, at the cost of `Ctrl-k` no longer starting VS Code's chord
+sequences.
+
+`Space j`/`k` and `Space h`/`l` need no special handling: they are ordinary Vim
+motions and behave identically in both editors.
 
 ## Optional or currently incomplete mappings
 

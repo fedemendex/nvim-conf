@@ -29,7 +29,7 @@ return {
         t({ "", "}" }),
     }),
     -- Function
-    s("fn", {
+    s("func", {
         t("func "),
         i(1, "name"),
         t("("),

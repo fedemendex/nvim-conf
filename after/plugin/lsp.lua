@@ -1,3 +1,10 @@
+-- Everything below is language-server, completion, and diagnostic setup, all of
+-- which VS Code supplies itself. vscode-neovim sets vim.g.vscode, so under it
+-- this file is skipped entirely.
+if vim.g.vscode then
+    return
+end
+
 -- language aware format
 vim.keymap.set("n", "<leader>f", function()
     vim.lsp.buf.format({ async = true })

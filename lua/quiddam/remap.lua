@@ -44,21 +44,43 @@ end, {
 
 -- LSP ------------------------------------------------------------------------
 
-vim.keymap.set(
-    "n",
-    "<leader><LeftMouse>",
-    "<LeftMouse><cmd>lua vim.lsp.buf.definition()<CR>",
-    {
-        silent = true,
-        desc = "Go to definition under mouse",
-    }
-)
+-- VS Code provides its own go-to-definition and formatting, so these are only
+-- wired up when Neovim runs standalone. Mirrors the guard in
+-- after/plugin/lsp.lua.
+if not vim.g.vscode then
+    vim.keymap.set(
+        "n",
+        "<leader><LeftMouse>",
+        "<LeftMouse><cmd>lua vim.lsp.buf.definition()<CR>",
+        {
+            silent = true,
+            desc = "Go to definition under mouse",
+        }
+    )
 
-vim.keymap.set("n", "<leader>f", function()
-    vim.lsp.buf.format()
-end, {
-    desc = "Format current file",
-})
+    vim.keymap.set("n", "<leader>f", function()
+        vim.lsp.buf.format()
+    end, {
+        desc = "Format current file",
+    })
+end
+
+-- Rename stays on <leader>rn in both editors. Standalone Neovim gets it from
+-- after/plugin/lsp.lua, where it is buffer-local and appears only once a
+-- language server attaches; that file is skipped wholesale under VS Code, so
+-- the VS Code half is declared here instead. Hence no else branch.
+if vim.g.vscode then
+    vim.keymap.set("n", "<leader>rn", function()
+        local ok, vscode = pcall(require, "vscode")
+
+        if ok then
+            vscode.action("editor.action.rename")
+        end
+    end, {
+        silent = true,
+        desc = "Rename symbol",
+    })
+end
 
 -- Visual-mode editing --------------------------------------------------------
 
@@ -107,20 +129,43 @@ vim.keymap.set("n", "<C-u>", "<C-u>zz", {
     desc = "Scroll half-page up and centre cursor",
 })
 
--- Scrolling on the same fingers as j/k. vim-tmux-navigator claims <C-j> and
--- <C-k> from its own plugin file, which loads after this one, so its default
--- mappings are disabled and the ones worth keeping are declared below.
-vim.g.tmux_navigator_no_mappings = 1
+-- The leader row ------------------------------------------------------------
 
-vim.keymap.set("n", "<C-j>", "<C-d>zz", {
+-- Scrolling moved off <C-j>/<C-k> and onto <leader>j/k: VS Code offers no
+-- leader-key equivalent of window navigation, so the Ctrl chords are reserved
+-- for movement and the same fingers work in both editors.
+--
+-- These are Normal, Visual, and operator-pending only. In Insert and Terminal
+-- mode <leader> is a literal space, so mapping <leader>j there would swallow
+-- every "j" typed after a space and stall every other space for timeoutlen.
+-- Insert mode reaches them with <Esc> first; the <C-hjkl> navigation further
+-- down does work in every mode.
+vim.keymap.set({ "n", "x" }, "<leader>j", "<C-d>zz", {
     desc = "Scroll half-page down and centre cursor",
 })
 
-vim.keymap.set("n", "<C-k>", "<C-u>zz", {
+vim.keymap.set({ "n", "x" }, "<leader>k", "<C-u>zz", {
     desc = "Scroll half-page up and centre cursor",
 })
 
--- Movement between Neovim splits and tmux panes.
+-- The horizontal half of the same row goes to the ends of the line, which is
+-- what Home and End do elsewhere. Operator-pending is included so that
+-- d<leader>l and c<leader>h work like d$ and c^.
+vim.keymap.set({ "n", "x", "o" }, "<leader>h", "^", {
+    desc = "Go to first non-blank character",
+})
+
+vim.keymap.set({ "n", "x", "o" }, "<leader>l", "$", {
+    desc = "Go to end of line",
+})
+
+-- Movement between Neovim splits and tmux panes ------------------------------
+
+-- vim-tmux-navigator claims all four Ctrl chords from its own plugin file,
+-- which loads after this one, so its default mappings are disabled and every
+-- direction is declared here instead.
+vim.g.tmux_navigator_no_mappings = 1
+
 local navigations = {
     h = "TmuxNavigateLeft",
     j = "TmuxNavigateDown",
@@ -128,32 +173,25 @@ local navigations = {
     l = "TmuxNavigateRight",
 }
 
--- <leader> is the primary way to move in all four directions. <C-w> keeps the
--- familiar prefix working and gains the same crossing into tmux panes.
+-- <C-hjkl> is the primary way to move in all four directions, matching the
+-- chords VS Code is limited to. <C-w> keeps the familiar prefix working and
+-- gains the same crossing into tmux panes.
 for key, command in pairs(navigations) do
-    for _, prefix in ipairs({ "<leader>", "<C-w>" }) do
-        vim.keymap.set("n", prefix .. key, "<cmd>" .. command .. "<CR>", {
-            silent = true,
-            desc = "Navigate: " .. command,
-        })
-    end
-end
-
--- <C-j> and <C-k> now scroll, so only the horizontal pair stays on a single
--- chord, together with the jump back to the previous pane.
-for _, key in ipairs({ "h", "l" }) do
     local chord = "<C-" .. key .. ">"
-    local command = navigations[key]
+    local rhs = "<cmd>" .. command .. "<CR>"
 
-    vim.keymap.set("n", chord, "<cmd>" .. command .. "<CR>", {
+    local options = {
         silent = true,
         desc = "Navigate: " .. command,
-    })
+    }
 
-    vim.keymap.set("t", chord, [[<C-\><C-n><cmd>]] .. command .. "<CR>", {
-        silent = true,
-        desc = "Navigate: " .. command,
-    })
+    vim.keymap.set("n", chord, rhs, options)
+    vim.keymap.set("n", "<C-w>" .. key, rhs, options)
+
+    -- Insert, Visual, and Terminal mode return to Normal mode first, so the
+    -- chord never carries an insertion, a selection, or a shell across into
+    -- the target split. <C-\><C-n> does that from all three.
+    vim.keymap.set({ "i", "x", "t" }, chord, [[<C-\><C-n>]] .. rhs, options)
 end
 
 vim.keymap.set("n", "<C-\\>", "<cmd>TmuxNavigatePrevious<CR>", {
@@ -193,14 +231,55 @@ vim.keymap.set({ "n", "v" }, "<leader>d", [["_d]], {
 
 -- Search and replace ---------------------------------------------------------
 
-vim.keymap.set(
-    "n",
-    "<leader>r",
-    [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]],
-    {
-        desc = "Replace word under cursor in file",
-    }
-)
+-- Both editors replace across the current file, each with its own machinery:
+-- VS Code opens the find/replace widget, standalone Neovim opens a :%s command
+-- line. Both are seeded with the word under the cursor, and the VS Code flags
+-- are chosen to match the Neovim pattern exactly -- matchWholeWord for \< \>,
+-- isCaseSensitive for the I flag, isRegex off because a bare word is literal.
+-- Rename lives on <leader>rn in both, up in the LSP section.
+if vim.g.vscode then
+    vim.keymap.set("n", "<leader>r", function()
+        local word = vim.fn.expand("<cword>")
+
+        -- Nothing to seed the widget with, e.g. on a blank line.
+        if word == "" then
+            return
+        end
+
+        local ok, vscode = pcall(require, "vscode")
+
+        if not ok then
+            return
+        end
+
+        vscode.action("editor.actions.findWithArgs", {
+            args = {
+                searchString = word,
+                replaceString = "",
+                isRegex = false,
+                isCaseSensitive = true,
+                matchWholeWord = true,
+                preserveCase = false,
+                findInSelection = false,
+            },
+        })
+    end, {
+        silent = true,
+        desc = "Replace word in current file",
+    })
+else
+    vim.keymap.set(
+        "n",
+        "<leader>r",
+        [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]],
+        {
+            desc = "Replace word under cursor in file",
+        }
+    )
+end
+
+-- Visual mode stays a substitute in both editors: it rewrites text inside the
+-- selection, which neither the widget nor a rename scopes to.
 
 vim.keymap.set(
     "x",

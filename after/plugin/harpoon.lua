@@ -20,7 +20,8 @@ vim.keymap.set("n", "<leader>a", mark.add_file, {
     desc = "Add current file to Harpoon",
 })
 
--- <leader>h moves between splits, so the menu lives on m for "marks".
+-- <leader>h jumps to the start of the line, so the menu lives on m for
+-- "marks".
 vim.keymap.set("n", "<leader>m", ui.toggle_quick_menu, {
     desc = "Toggle Harpoon menu",
 })

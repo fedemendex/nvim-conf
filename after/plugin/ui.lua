@@ -14,6 +14,13 @@ local function tree_on_attach(bufnr)
         buffer = bufnr,
     })
 
+    -- It also maps <C-k> to its node-info popup, which would shadow the
+    -- navigation chord and trap the cursor in the tree. Info stays on the
+    -- tree's own "g?" help under <C-k>'s original name.
+    pcall(vim.keymap.del, "n", "<C-k>", {
+        buffer = bufnr,
+    })
+
     -- Add the selected tree file to Harpoon.
     vim.keymap.set("n", "<leader>a", function()
         local node = api.tree.get_node_under_cursor()
@@ -82,6 +89,18 @@ require("toggleterm").setup({
 })
 
 vim.keymap.set("n", "<leader>ter", function()
+    -- VS Code owns the panel, so toggle its integrated terminal rather than
+    -- opening a ToggleTerm split that vscode-neovim cannot render.
+    if vim.g.vscode then
+        local ok, vscode = pcall(require, "vscode")
+
+        if ok then
+            vscode.action("workbench.action.terminal.toggleTerminal")
+        end
+
+        return
+    end
+
     -- Ensures the terminal split is created from the editor,
     -- not from nvim-tree.
     windows.focus_editor()
@@ -112,53 +131,63 @@ vim.api.nvim_create_autocmd("TermOpen", {
 
 -- Startup layout ----------------------------------------------------------
 
-local startup_group = vim.api.nvim_create_augroup(
-    "OpenWorkspaceLayout",
-    { clear = true }
-)
+-- VS Code owns the window layout, the file tree, and which editors are open,
+-- so none of this runs under vscode-neovim. Restoring a session there also
+-- broke it outright: 'buffers' is in sessionoptions, so sourcing the session
+-- created a buffer already named after a file, and vscode-neovim then failed
+-- with "E95: Buffer with this name already exists" when it tried to name its
+-- own buffer for the same document. Saving is skipped for the same reason --
+-- a VS Code layout is meaningless to standalone Neovim, and writing one would
+-- overwrite the session this directory saved from the terminal.
+if not vim.g.vscode then
+    local startup_group = vim.api.nvim_create_augroup(
+        "OpenWorkspaceLayout",
+        { clear = true }
+    )
 
-vim.api.nvim_create_autocmd("VimEnter", {
-    group = startup_group,
-    once = true,
+    vim.api.nvim_create_autocmd("VimEnter", {
+        group = startup_group,
+        once = true,
 
-    callback = function()
-        vim.schedule(function()
-            -- Restoring only makes sense when no files were given to open.
-            if session.started_without_files() and session.restore() then
-                windows.focus_editor()
-                windows.remember_editor()
-
-                return
-            end
-
-            local editor_window = vim.api.nvim_get_current_win()
-
-            -- Remember the window where files should be opened.
-            windows.remember_editor(editor_window)
-
-            -- Open the tree on the left.
-            vim.cmd("NvimTreeOpen")
-
-            if vim.api.nvim_win_is_valid(editor_window) then
-                vim.api.nvim_set_current_win(editor_window)
-            end
-
-            -- Start with nvim-tree focused.
+        callback = function()
             vim.schedule(function()
-                vim.cmd("NvimTreeFocus")
+                -- Restoring only makes sense when no files were given to open.
+                if session.started_without_files() and session.restore() then
+                    windows.focus_editor()
+                    windows.remember_editor()
+
+                    return
+                end
+
+                local editor_window = vim.api.nvim_get_current_win()
+
+                -- Remember the window where files should be opened.
+                windows.remember_editor(editor_window)
+
+                -- Open the tree on the left.
+                vim.cmd("NvimTreeOpen")
+
+                if vim.api.nvim_win_is_valid(editor_window) then
+                    vim.api.nvim_set_current_win(editor_window)
+                end
+
+                -- Start with nvim-tree focused.
+                vim.schedule(function()
+                    vim.cmd("NvimTreeFocus")
+                end)
             end)
-        end)
-    end,
-})
+        end,
+    })
 
--- Record the layout so the next start in this directory can rebuild it.
-vim.api.nvim_create_autocmd("VimLeavePre", {
-    group = startup_group,
+    -- Record the layout so the next start in this directory can rebuild it.
+    vim.api.nvim_create_autocmd("VimLeavePre", {
+        group = startup_group,
 
-    callback = function()
-        session.save()
-    end,
-})
+        callback = function()
+            session.save()
+        end,
+    })
+end
 
 -- Make the focused window visually obvious.
 local function set_window_focus()
