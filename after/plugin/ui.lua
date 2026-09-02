@@ -60,21 +60,45 @@ require("nvim-tree").setup({
     },
 })
 
+-- VS Code has its own explorer, so the tree is never drawn there. Both
+-- editors show and hide it from this key, each with its own machinery.
+--
+-- The single command that matches NvimTreeToggle in shape,
+-- workbench.action.toggleSidebarVisibility, says nothing about *which* view
+-- comes back, so after a project search it reopened the sidebar on Search
+-- rather than on the file tree. Naming the view means naming the direction
+-- too: workbench.view.explorer only ever reveals, closeSidebar only ever
+-- hides.
+--
+-- Which of the two to run has to be tracked here, because VS Code exposes no
+-- way to ask whether its sidebar is showing -- not through a command, and not
+-- through the extension API that vscode.eval reaches. Both commands are
+-- unconditional, so a tracked value that has drifted -- the sidebar closed
+-- with Cmd+B or the mouse while this still thinks it is open -- costs one
+-- keypress and corrects itself: that press hides nothing, the next one opens
+-- the explorer.
+--
+-- It starts false against a sidebar VS Code usually opens showing the
+-- explorer, which makes the first press of a session focus that explorer
+-- rather than close it. That is the friendlier way round for the state to be
+-- wrong, so it is left as is.
+local explorer_visible = false
+
 vim.keymap.set("n", "<leader>n", function()
-    -- VS Code has its own explorer, so the tree is never drawn there.
-    --
-    -- toggleSidebarVisibility is the command that matches NvimTreeToggle:
-    -- it shows and hides. workbench.view.explorer looks like the obvious
-    -- choice but is not a visibility toggle -- with the explorer already
-    -- visible and focused it just returns focus to the editor group, so the
-    -- pane can never be closed with it. Swap it in if focus toggling is
-    -- wanted instead of showing and hiding.
     if vim.g.vscode then
         local ok, vscode = pcall(require, "vscode")
 
-        if ok then
-            vscode.action("workbench.action.toggleSidebarVisibility")
+        if not ok then
+            return
         end
+
+        if explorer_visible then
+            vscode.action("workbench.action.closeSidebar")
+        else
+            vscode.action("workbench.view.explorer")
+        end
+
+        explorer_visible = not explorer_visible
 
         return
     end
@@ -111,8 +135,23 @@ require("toggleterm").setup({
 if vim.g.vscode then
     local vscode = require("vscode")
 
+    -- The panel is shared: Test Results takes it over after <leader>tn, and
+    -- workbench.action.terminal.focus does not reliably pull it back to the
+    -- terminal from there. Terminal.show() is addressed at one terminal
+    -- rather than at the panel, so it reveals that terminal whatever view the
+    -- panel is parked on, and creating one when none exists matches the way
+    -- the ToggleTerm branch below builds the terminal on demand.
+    --
+    -- preserveFocus is false so focus moves into the terminal, as
+    -- 1ToggleTerm does.
     vim.keymap.set("n", "<leader>ter", function()
-        vscode.action("workbench.action.terminal.focus")
+        vscode.eval_async([[
+            const terminal = vscode.window.activeTerminal
+                || vscode.window.terminals[0]
+                || vscode.window.createTerminal();
+
+            terminal.show(false);
+        ]])
     end, {
         silent = true,
         desc = "Focus VS Code terminal",
