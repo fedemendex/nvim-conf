@@ -110,6 +110,7 @@ Install the files with this structure:
 ├── tmux.conf
 ├── lua/
 │   └── quiddam/
+│       ├── debug_toolbar.lua
 │       ├── init.lua
 │       ├── packer.lua
 │       ├── remap.lua
@@ -449,9 +450,56 @@ opens automatically with:
 - A debug console and REPL
 - Inline variable values beside the source code
 - A small reminder showing the main debugging controls
+- A clickable toolbar with VS Code's debug buttons
 
-The interface and reminder close automatically when the session ends. Toggle
-them manually with `Space d u` and `Space d h`.
+The interface, reminder, and toolbar close automatically when the session ends.
+Toggle them manually with `Space d u`, `Space d h`, and `:DebugToolbar`.
+
+#### Debug toolbar
+
+A floating toolbar at the top of the screen mirrors the one VS Code shows during
+a session:
+
+| Button | Action |
+|---|---|
+| Grip | Drag to move the toolbar; it keeps its position for the rest of the Neovim session |
+| Continue / Pause | Continue when stopped, pause while running |
+| Step over / into / out | Same as `Space d n`, `Space d i`, `Space d o` |
+| Restart | Restart the session (green) |
+| Stop | Terminate the session (red) |
+
+Clicking a button never moves the cursor out of the source window, and the
+toolbar cannot be reached with `Ctrl-w w`. The mouse mappings behind it exist
+only while it is visible and only act when the pointer is over it, so clicks
+elsewhere behave as usual.
+
+The icons are VS Code's codicons from Nerd Fonts. Without a patched font, use
+plain Unicode symbols instead in `after/plugin/debug.lua`:
+
+```lua
+require("quiddam.debug_toolbar").setup({ icons = "text" })
+```
+
+#### Signs and the stopped line
+
+Breakpoints show as a bold red `B` in the sign column (`C` for conditional
+breakpoints), with the line number in red as well. The line where execution is
+paused gets an amber background and a yellow `→`, distinct from the cursor
+line. Both survive colorscheme changes.
+
+#### Where execution stops
+
+The window a session was launched from stays put. When the debugger stops in
+another file, it lands:
+
+1. In a window already showing that file.
+2. Otherwise in another file window, replacing what it shows.
+3. Otherwise in a new vertical split beside the launch window.
+
+So debugging a `_test.go` with the implementation open in the other pane jumps
+to that pane instead of replacing the test. The launch window is the one
+focused when `Space d c`, `F5`, or `Space d t` starts a session; restarting
+keeps it.
 
 #### Debugging a Go test
 

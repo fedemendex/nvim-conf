@@ -34,6 +34,114 @@ dapui.setup({
     },
 })
 
+-- Breakpoint and stopped-line signs -------------------------------------------
+
+-- nvim-dap draws breakpoints with the SignColumn highlight, which blends into
+-- the gutter. Give them a dedicated red group, re-applied whenever a colorscheme
+-- clears highlights.
+local function set_breakpoint_highlights()
+    vim.api.nvim_set_hl(0, "DapBreakpoint", { fg = "#e51400", bold = true })
+    vim.api.nvim_set_hl(0, "DapBreakpointCondition", { fg = "#e51400", bold = true })
+
+    -- Amber band on the paused line, distinct from the blue-grey CursorLine.
+    vim.api.nvim_set_hl(0, "DapStopped", { fg = "#ffc777", bold = true })
+    vim.api.nvim_set_hl(0, "DapStoppedLine", { bg = "#4b4122" })
+end
+
+set_breakpoint_highlights()
+
+vim.api.nvim_create_autocmd("ColorScheme", {
+    group = vim.api.nvim_create_augroup("quiddam_dap_signs", { clear = true }),
+    callback = set_breakpoint_highlights,
+})
+
+vim.fn.sign_define("DapBreakpoint", {
+    text = "B",
+    texthl = "DapBreakpoint",
+    numhl = "DapBreakpoint",
+})
+
+vim.fn.sign_define("DapBreakpointCondition", {
+    text = "C",
+    texthl = "DapBreakpointCondition",
+    numhl = "DapBreakpointCondition",
+})
+
+vim.fn.sign_define("DapStopped", {
+    text = "→",
+    texthl = "DapStopped",
+    linehl = "DapStoppedLine",
+    numhl = "DapStopped",
+})
+
+-- Where execution stops ------------------------------------------------------
+
+-- By default nvim-dap shows the stopped location in the current window, so
+-- debugging a _test.go that stops in another file swaps the test out of its
+-- pane. Instead, the window a session was launched from stays put: stops land
+-- in a window already showing the file, else another file window, else a new
+-- split beside the launch window.
+local launch_window
+
+local function remember_launch_window()
+    if not dap.session() then
+        launch_window = vim.api.nvim_get_current_win()
+    end
+end
+
+local function is_file_window(win)
+    local buf = vim.api.nvim_win_get_buf(win)
+    return vim.api.nvim_win_get_config(win).relative == ""
+        and vim.bo[buf].buftype == ""
+end
+
+local function stop_window(bufnr)
+    local current = vim.api.nvim_get_current_win()
+    local windows = vim.tbl_filter(is_file_window, vim.api.nvim_tabpage_list_wins(0))
+
+    if vim.api.nvim_win_get_buf(current) == bufnr then
+        return current
+    end
+
+    for _, win in ipairs(windows) do
+        if vim.api.nvim_win_get_buf(win) == bufnr then
+            return win
+        end
+    end
+
+    local previous = vim.fn.win_getid(vim.fn.winnr("#"))
+    for _, win in ipairs({ current, previous, unpack(windows) }) do
+        if win ~= launch_window and vim.tbl_contains(windows, win) then
+            return win
+        end
+    end
+
+    local anchor = launch_window
+    if not (anchor and vim.api.nvim_win_is_valid(anchor)) then
+        anchor = current
+    end
+
+    return vim.api.nvim_win_call(anchor, function()
+        vim.cmd("vsplit")
+        return vim.api.nvim_get_current_win()
+    end)
+end
+
+dap.defaults.fallback.switchbuf = function(bufnr, line, column)
+    local win = stop_window(bufnr)
+
+    if vim.api.nvim_win_get_buf(win) ~= bufnr then
+        vim.api.nvim_win_set_buf(win, bufnr)
+    end
+
+    pcall(vim.api.nvim_win_set_cursor, win, { line, math.max(column - 1, 0) })
+    vim.api.nvim_set_current_win(win)
+    vim.cmd("normal! zv")
+end
+
+-- Clickable VS Code-style controls, shown while a session is active.
+require("quiddam.debug_toolbar").setup()
+
 -- Install/configure external adapters.
 require("mason-nvim-dap").setup({
     ensure_installed = {
@@ -309,7 +417,10 @@ local controls = {
     {
         chord = "<leader>dc",
         fkey = "<F5>",
-        action = dap.continue,
+        action = function()
+            remember_launch_window()
+            dap.continue()
+        end,
         desc = "Debug: start or continue",
     },
     {
@@ -373,6 +484,7 @@ vim.keymap.set("n", "<leader>dr", dap.repl.open, {
 })
 
 vim.keymap.set("n", "<leader>dt", function()
+    remember_launch_window()
     require("dap-go").debug_test()
 end, {
     desc = "Debug nearest Go test",
