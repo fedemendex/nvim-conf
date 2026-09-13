@@ -597,7 +597,25 @@ the Go adapter can also be checked with:
 In an LSP-enabled buffer, the buffer-local `Space d` diagnostic mapping takes
 precedence over the global black-hole-delete mapping.
 
-Files are also formatted automatically immediately before saving.
+#### Fixes on save
+
+Saving a file applies, in order:
+
+1. `source.organizeImports`, which adds missing imports (gopls runs goimports
+   for it), so a new `_test.go` that calls `assert.Equal` gets its imports
+   written for it.
+2. `quickfix` code actions for the whole file, the same kind `Space q f`
+   applies by hand.
+3. Formatting.
+
+Imports go first because adding lines at the top moves every range below
+them. A quick fix is only applied when it is the sole fix offered for its
+diagnostic; when a server offers a choice, such as `Fatal` or `Fatalf`, it is
+left for `Space q f`. Each request waits at most three seconds.
+
+To keep a file from being rewritten, set `vim.b.disable_save_actions = true`
+for one buffer or `vim.g.disable_save_actions = true` for all of them.
+Formatting still runs; only the code actions are skipped.
 
 ### Completion
 
