@@ -656,6 +656,11 @@ its node-info popup, which would shadow the movement chord and leave no way to
 step up out of the tree. Node info is still reachable from the tree's own `g?`
 help.
 
+Creating a file with `a` in the tree opens it straight away and moves focus to
+it. It replaces what the editor window beside the tree shows, so `g b` returns
+to the previous file; when only the tree is open, the file opens in a vertical
+split instead. Names ending in `/` still create a directory and open nothing.
+
 `Space t e r` opens the terminal horizontally at approximately one quarter of
 the Neovim window height. It is not opened at startup and is not restored with
 a session; running a test opens it on demand. `Ctrl-k` moves into the editor

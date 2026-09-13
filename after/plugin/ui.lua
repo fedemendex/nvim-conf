@@ -60,6 +60,58 @@ require("nvim-tree").setup({
     },
 })
 
+-- Opening a file the moment it is created ------------------------------------
+--
+-- nvim-tree's "a" creates the file and then leaves it sitting there: the
+-- cursor stays in the tree and nothing opens. Naming a file is as good as
+-- saying you want to write in it, so it is opened in the editor window and
+-- focus follows it.
+--
+-- ":edit" in the window that is already there, rather than a split, is what
+-- makes "gb" work afterwards. That mapping is ":edit #", and # is whatever the
+-- window was showing before -- so replacing the buffer in place leaves the
+-- previous file one keypress away. Opening a new split instead would leave two
+-- windows and no alternate file to go back to.
+--
+-- VS Code has no nvim-tree, so none of this applies there.
+if not vim.g.vscode then
+    local tree_api = require("nvim-tree.api")
+
+    tree_api.events.subscribe(
+        tree_api.events.Event.FileCreated,
+        function(file)
+            local path = file.fname
+
+            -- "a" makes a directory when the name ends in a separator, and
+            -- nvim-tree reports that through FolderCreated rather than here.
+            -- This only guards against editing one by accident.
+            if vim.fn.isdirectory(path) == 1 then
+                return
+            end
+
+            local name = vim.fn.fnameescape(path)
+
+            -- The usual case: an editor window is already open beside the
+            -- tree, so the new file replaces what it holds.
+            if windows.focus_editor() then
+                vim.cmd("edit " .. name)
+            else
+                -- Nothing but the tree is open, so the window it normally
+                -- sits beside has to be built. 'splitright' puts it on the
+                -- right, and the file is named here so the window is never
+                -- momentarily holding the tree's own buffer.
+                vim.cmd("vsplit " .. name)
+
+                -- The split halved the tree; this returns it to the width
+                -- configured above.
+                pcall(tree_api.tree.resize)
+            end
+
+            windows.remember_editor()
+        end
+    )
+end
+
 -- VS Code has its own explorer, so the tree is never drawn there. Both
 -- editors show and hide it from this key, each with its own machinery.
 --
