@@ -273,10 +273,10 @@ Notation used below:
 | Normal | `Space g i t` | Find Git-tracked files with Telescope |
 | Normal | `Space g` | Prompt for text and grep the project |
 | Normal | `Space n` | Toggle the file tree |
-| Normal | `Space a` | Add the current file to Harpoon |
-| Normal | `Space m` | Toggle the Harpoon menu |
-| Normal | `Space 1` … `Space 9` | Open Harpoon file 1 … 9 |
-| Normal | `Space u` | Toggle the undo tree |
+| Normal | `Space a` | Add the current file to Harpoon (pin the editor under VS Code) |
+| Normal | `Space m` | Toggle the Harpoon menu (show all open editors under VS Code) |
+| Normal | `Space 1` … `Space 9` | Open Harpoon file 1 … 9 (open editor 1 … 9 under VS Code) |
+| Normal | `Space u` | Toggle the undo tree (focus the Timeline under VS Code) |
 | Normal | `n` / `N` | Next/previous search result and centre it |
 | Normal | `Ctrl-d` / `Ctrl-u` | Half-page down/up and centre the cursor |
 | Normal | `Space c n` / `Space c p` | Next/previous quickfix entry |
@@ -425,8 +425,13 @@ the trigger in insert mode and press `Tab` to expand it, then `Tab` and
 | Normal | `Space t f` | Run every test in the current file |
 | Normal | `Space t a` | Run the entire test suite |
 | Normal | `Space t l` | Run the last test again |
-| Normal | `Space t s` | Open the test file on the right of the current file, creates it if it doesnt exist | 
+| Normal | `Space t s` | Open the test file on the right of the current file, creates it if it doesnt exist |
 
+
+Under VS Code `Space t s` does the same job through VS Code's own API: the
+file is created with `workspace.fs` and shown with `ViewColumn.Beside`, which
+opens the editor group to the right and creates one if there is not already a
+second group. See [VS Code](#vs-code).
 
 `vim-test` uses the project's own test runner. The corresponding tools must
 already be available—for example `go`, `cargo`, `npm`, Vitest, or Jest.
@@ -688,19 +693,31 @@ Skipped under VS Code:
 | `after/plugin/lsp.lua` | The entire file | VS Code supplies its own LSP, completion, and diagnostics |
 | `after/plugin/test.lua` | The `vim-test` and ToggleTerm path | VS Code's runner resolves package paths from the workspace root and reports into the Test Results panel |
 | `after/plugin/ui.lua` | Session save/restore and the startup file tree | VS Code owns the window layout and the explorer |
+| `after/plugin/harpoon.lua` | Harpoon itself, setup included | Its menu is a float VS Code cannot draw, and its jumps create Neovim buffers (see below) |
 | `lua/quiddam/remap.lua` | Go-to-definition and `Space f` formatting | VS Code provides both |
 
 Redirected to a VS Code command:
 
 | Keys | Action in VS Code |
 |---|---|
-| `Space t e r` | `workbench.action.terminal.toggleTerminal` |
+| `Space o` | `workbench.action.quickOpen` |
+| `Space g i t` | `workbench.action.quickOpen` |
+| `Space g` | `workbench.action.findInFiles` |
+| `Space g s` | `workbench.view.scm` |
+| `Space n` | `workbench.view.explorer` / `workbench.action.closeSidebar` |
+| `Space t e r` | `terminal.show()` on the active terminal, through `vscode.eval_async` |
 | `Space t n` | `testing.runAtCursor` |
 | `Space t f` | `testing.runCurrentFile` |
 | `Space t a` | `testing.runAll` |
 | `Space t l` | `testing.reRunLastRun` |
+| `Space t s` | `workspace.fs` plus `showTextDocument` with `ViewColumn.Beside` |
+| `Space a` | `workbench.action.pinEditor` |
+| `Space m` | `workbench.action.showAllEditors` |
+| `Space 1` … `Space 9` | `workbench.action.openEditorAtIndex1` … `9` |
 | `Space r n` | `editor.action.rename` |
 | `Space r` | `editor.actions.findWithArgs`, seeded with the word under the cursor |
+| `Space ?` | `showQuickPick` over the Neovim mappings |
+| `Space u` | `timeline.focus` |
 
 `Space r` passes `matchWholeWord` and `isCaseSensitive`, so the find widget
 matches the same occurrences as the `\<`, `\>`, and `I` of the `:%s` command
@@ -712,6 +729,45 @@ The test mappings use the editor-agnostic Test Explorer commands, so they work
 for Go, TypeScript, and Python alike. To get the Go extension's own output tab
 instead, swap them for `go.test.cursor`, `go.test.file`, `go.test.workspace`,
 and `go.test.previous` in `after/plugin/test.lua`.
+
+`Space g i t` runs the same command as `Space o`. VS Code has no picker limited
+to tracked files, and Quick Open already honours `.gitignore`, so it lists very
+nearly what `git_files` does. The two keys stay separate so the distinction
+survives for standalone Neovim, where they really do differ.
+
+Harpoon has no counterpart in VS Code, so the open editors of the current group
+take the place of its numbered slots. Pinning is what keeps a file in reach the
+way a mark does: pinned tabs sort to the front of the group, so they hold the
+low indices `Space 1` and `Space 2` land on.
+
+`Space ?` builds its list from the same `nvim_get_keymap` table Telescope
+reads and hands it to a VS Code quick pick. VS Code's own keyboard-shortcuts
+editor is not the substitute it looks like: these are Neovim mappings, and VS
+Code has never heard of `Space t s`. The quick pick is a reference rather than
+a launcher — choosing an entry does nothing, because keys fed back into Neovim
+from it would fire wherever the cursor had been left, and many of these
+mappings expect a selection or a particular buffer.
+
+`Space u` opens the Timeline, which holds Local History: a snapshot of the file
+at each save, ready to be diffed against the current contents or restored over
+them. It is close to undotree but not the same, and the difference matters —
+undotree walks Neovim's own undo history and so reaches states that were never
+written to disk, while Local History only has the saves.
+
+### Why nothing under VS Code may open a file itself
+
+vscode-neovim keeps one Neovim buffer per VS Code document and names it after
+the file. A buffer of that name created by anything else makes
+`nvim_buf_set_name` fail with `E95: Buffer with this name already exists`,
+which reaches the user as `Error syncing layout`. The extension does clear such
+collisions, but only for buffers it created itself, which it recognises by the
+`vscode_uri` variable it sets on them; a buffer this configuration opened has
+none, so the error escapes. Because `hidden` is on, one such buffer lingers for
+the rest of the session and the error repeats.
+
+Anything that opens a file therefore has to go through VS Code, never through
+`:edit`, `:vsplit`, or `vim.fn.bufadd`. That is what keeps session restore,
+Harpoon, `Space g i t`, and `Space t s` out of Neovim's hands here.
 
 ### Window movement in VS Code
 

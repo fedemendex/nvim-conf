@@ -133,8 +133,6 @@ require("toggleterm").setup({
 })
 
 if vim.g.vscode then
-    local vscode = require("vscode")
-
     -- The panel is shared: Test Results takes it over after <leader>tn, and
     -- workbench.action.terminal.focus does not reliably pull it back to the
     -- terminal from there. Terminal.show() is addressed at one terminal
@@ -144,7 +142,23 @@ if vim.g.vscode then
     --
     -- preserveFocus is false so focus moves into the terminal, as
     -- 1ToggleTerm does.
+    --
+    -- The module is required inside the mapping and through pcall, as
+    -- <leader>n above does. Requiring it at file scope instead would throw
+    -- during startup if it were ever missing, taking the rest of this file --
+    -- and undotree.lua after it -- down with it.
     vim.keymap.set("n", "<leader>ter", function()
+        local ok, vscode = pcall(require, "vscode")
+
+        if not ok then
+            vim.notify(
+                "vim.g.vscode is set but the vscode module is unavailable",
+                vim.log.levels.ERROR
+            )
+
+            return
+        end
+
         vscode.eval_async([[
             const terminal = vscode.window.activeTerminal
                 || vscode.window.terminals[0]

@@ -4,9 +4,99 @@ vim.g.mapleader = " "
 vim.opt.mouse = "a"
 vim.opt.clipboard = "unnamedplus"
 
-vim.keymap.set("n", "<leader>?", "<cmd>Telescope keymaps<CR>", {
-    desc = "Search all keyboard mappings",
-})
+-- Both editors put every mapping in one searchable list, each with its own
+-- picker: standalone Neovim opens Telescope, VS Code opens a quick pick built
+-- from the same table Telescope reads.
+--
+-- VS Code's own keyboard-shortcuts editor is not the substitute it looks like.
+-- The keys in question are Neovim mappings, and VS Code has never heard of
+-- <leader>ts, so that editor would list an entirely different set. The list is
+-- assembled here instead and handed over only to be displayed.
+--
+-- It is a reference, not a launcher: choosing an entry does nothing. Telescope
+-- runs the mapping on select, but keys fed back into Neovim from a quick pick
+-- would fire wherever the cursor had been left, and a good many of these
+-- expect a selection or a particular buffer to act on.
+local function keymap_items()
+    local modes = {
+        n = "Normal",
+        x = "Visual",
+        o = "Operator",
+        i = "Insert",
+        t = "Terminal",
+    }
+
+    local items = {}
+
+    for mode, label in pairs(modes) do
+        for _, map in ipairs(vim.api.nvim_get_keymap(mode)) do
+            -- <Plug> mappings are plugin plumbing and are never typed.
+            if not map.lhs:find("<Plug>", 1, true) then
+                items[#items + 1] = {
+                    -- nvim_get_keymap already reports special keys in <> form
+                    -- -- "<C-W>h", never a raw byte -- so the only thing left
+                    -- to spell out is the leader, which comes back as a
+                    -- literal space. A space in an lhs is always the space
+                    -- key, so every one of them can be named. Running
+                    -- vim.fn.keytrans over this would be wrong: with nothing
+                    -- raw left to translate it only escapes the notation that
+                    -- is already there, turning "<C-W>h" into "<lt>C-W>h".
+                    label = (map.lhs:gsub(" ", "<Space>")),
+                    description = label,
+                    detail = map.desc or map.rhs or "",
+                }
+            end
+        end
+    end
+
+    table.sort(items, function(first, second)
+        if first.description == second.description then
+            return first.label < second.label
+        end
+
+        return first.description < second.description
+    end)
+
+    return items
+end
+
+if vim.g.vscode then
+    vim.keymap.set("n", "<leader>?", function()
+        local ok, vscode = pcall(require, "vscode")
+
+        if not ok then
+            vim.notify(
+                "vim.g.vscode is set but the vscode module is unavailable",
+                vim.log.levels.ERROR
+            )
+
+            return
+        end
+
+        vscode.eval_async(
+            [[
+                await vscode.window.showQuickPick(args.items, {
+                    title: "Neovim mappings",
+                    placeHolder: "Search all keyboard mappings",
+                    matchOnDescription: true,
+                    matchOnDetail: true,
+                });
+            ]],
+            {
+                args = {
+                    items = keymap_items(),
+                },
+            }
+        )
+    end, {
+        silent = true,
+        desc = "Search all keyboard mappings",
+    })
+else
+    vim.keymap.set("n", "<leader>?", "<cmd>Telescope keymaps<CR>", {
+        desc = "Search all keyboard mappings",
+    })
+end
 
 vim.keymap.set("n", "<C-a>", "ggVG", {
     desc = "Select entire file",
@@ -445,6 +535,91 @@ local function companion_test_path(source)
     return candidates[1]
 end
 
+-- Under VS Code both halves of the job -- creating the file and putting it
+-- beside the current one -- go through VS Code's own API, and nothing here
+-- touches a Neovim buffer.
+--
+-- That last part is the point. Opening the test with :vsplit left a plain
+-- Neovim buffer named after the file, and vscode-neovim then failed with
+-- "E95: Buffer with this name already exists" when it created its own buffer
+-- for the same document, surfacing as "Error syncing layout". The extension
+-- clears such collisions only for buffers it made itself, which it recognises
+-- by their vscode_uri variable; a buffer this configuration opened has none,
+-- so the error escapes. It is the same failure that keeps session restore out
+-- of VS Code in after/plugin/ui.lua.
+--
+-- workspace.fs rather than vim.fn.writefile so the explorer and any file
+-- watchers see the new file at once, and so the write goes wherever the
+-- workspace actually lives. That last part is also why the target URI is
+-- rebuilt from the current document's own URI when there is one, instead of
+-- always being vscode.Uri.file: over Remote SSH or in a dev container the
+-- documents are vscode-remote:// and a file:// URI would name a path on the
+-- wrong machine. ViewColumn.Beside is what "rightbelow vsplit" means here: the
+-- editor group to the right, created if there is not one yet. Without it the
+-- file merely takes over the active group as another tab. preview = false
+-- pins the tab, so the next file opened does not recycle it -- a split stays
+-- put, and this should too.
+local function open_companion_test_in_vscode(test_path)
+    local ok, vscode = pcall(require, "vscode")
+
+    if not ok then
+        vim.notify(
+            "vim.g.vscode is set but the vscode module is unavailable",
+            vim.log.levels.ERROR
+        )
+
+        return
+    end
+
+    vscode.eval_async(
+        [[
+            const base = args.base ? vscode.Uri.parse(args.base) : null;
+
+            // The companion test sits in the same directory as its source, so
+            // the source's scheme and authority are the right ones to keep.
+            const uri = base
+                ? base.with({ path: args.path, query: "", fragment: "" })
+                : vscode.Uri.file(args.path);
+
+            let created = false;
+
+            try {
+                await vscode.workspace.fs.stat(uri);
+            } catch {
+                await vscode.workspace.fs.writeFile(uri, new Uint8Array());
+                created = true;
+            }
+
+            await vscode.window.showTextDocument(uri, {
+                viewColumn: vscode.ViewColumn.Beside,
+                preview: false,
+            });
+
+            return created;
+        ]],
+        {
+            args = {
+                path = test_path,
+
+                -- vscode-neovim records the document's URI on the buffer it
+                -- owns. Absent for a buffer VS Code does not back, in which
+                -- case the JS falls back to a local file URI.
+                base = vim.b.vscode_uri,
+            },
+
+            callback = function(err, created)
+                if err then
+                    vim.notify(tostring(err), vim.log.levels.ERROR)
+                elseif created then
+                    vim.notify(
+                        "Created " .. vim.fn.fnamemodify(test_path, ":t")
+                    )
+                end
+            end,
+        }
+    )
+end
+
 local function open_companion_test()
     local source = vim.api.nvim_buf_get_name(0)
 
@@ -460,6 +635,11 @@ local function open_companion_test()
             "No test-file convention for this file type",
             vim.log.levels.WARN
         )
+        return
+    end
+
+    if vim.g.vscode then
+        open_companion_test_in_vscode(test_path)
         return
     end
 

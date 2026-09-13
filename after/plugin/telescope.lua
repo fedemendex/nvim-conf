@@ -40,12 +40,43 @@ else
     })
 end
 
-vim.keymap.set("n", "<leader>git", function()
-    windows.focus_editor()
-    builtin.git_files()
-end, {
-    desc = "Telescope find Git files",
-})
+-- The Telescope picker is a float vscode-neovim cannot render, and picking an
+-- entry from it runs :edit, leaving a plain Neovim buffer named after the file.
+-- vscode-neovim then fails with "E95: Buffer with this name already exists"
+-- when it opens that document itself -- the collision described in
+-- after/plugin/harpoon.lua. So this goes to VS Code's picker as well.
+--
+-- Which makes it the same command as <leader>o above. Nothing is lost: VS Code
+-- has no picker restricted to tracked files, and Quick Open already honours
+-- .gitignore, so it lists very nearly what git_files does. The two keys are
+-- kept apart rather than collapsed so that the distinction survives for
+-- standalone Neovim, where git_files really does differ.
+if vim.g.vscode then
+    vim.keymap.set("n", "<leader>git", function()
+        local ok, vscode = pcall(require, "vscode")
+
+        if not ok then
+            vim.notify(
+                "vim.g.vscode is set but the vscode module is unavailable",
+                vim.log.levels.ERROR
+            )
+
+            return
+        end
+
+        vscode.action("workbench.action.quickOpen")
+    end, {
+        silent = true,
+        desc = "Find Git files",
+    })
+else
+    vim.keymap.set("n", "<leader>git", function()
+        windows.focus_editor()
+        builtin.git_files()
+    end, {
+        desc = "Telescope find Git files",
+    })
+end
 
 -- Search across the project ----------------------------------------------------
 
