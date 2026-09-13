@@ -108,6 +108,8 @@ Install the files with this structure:
 ~/.config/nvim/
 ├── init.lua
 ├── tmux.conf
+├── scripts/
+│   └── vscode-probe.sh
 ├── lua/
 │   └── quiddam/
 │       ├── debug_toolbar.lua
@@ -117,6 +119,7 @@ Install the files with this structure:
 │       ├── session.lua
 │       ├── set.lua
 │       ├── structural.lua
+│       ├── vscode_debug.lua
 │       ├── windows.lua
 │       └── snippets/
 │           └── go.lua
@@ -791,6 +794,31 @@ the rest of the session and the error repeats.
 Anything that opens a file therefore has to go through VS Code, never through
 `:edit`, `:vsplit`, or `vim.fn.bufadd`. That is what keeps session restore,
 Harpoon, `Space g i t`, and `Space t s` out of Neovim's hands here.
+
+### When VS Code stops responding to typing
+
+`lua/quiddam/vscode_debug.lua` loads only under VS Code and helps diagnose the
+editor looking frozen. The usual cause is the cursor sitting in a Neovim window
+VS Code does not draw, such as the empty startup buffer: Neovim is fine and
+keys are being applied, just to a buffer no editor shows.
+
+| Tool | What it does |
+|---|---|
+| `Space z` / `:VscodeUnstick` | Move the cursor back to a window VS Code shows. If this unfreezes the editor, that was the cause |
+| `~/.local/state/nvim/vscode-freeze.log` | A line each time the cursor enters or leaves an undrawn window, with the buffer and mode |
+| `scripts/vscode-probe.sh` | Run from a terminal during a freeze to ask each embedded Neovim its state |
+
+The probe reaches each instance through a socket under
+`~/.local/state/nvim/vscode-sockets/`, opened at startup and named after the
+Neovim pid; vscode-neovim's own stdio connection cannot be queried from outside.
+It reports the mode, whether Neovim is blocked waiting for a key (as Flash and
+multicursor do), the current window and buffer, whether VS Code backs that
+buffer, and the last messages. No reply at all means Neovim is stuck somewhere
+that does not process RPC.
+
+```bash
+~/.config/nvim/scripts/vscode-probe.sh
+```
 
 ### Window movement in VS Code
 
