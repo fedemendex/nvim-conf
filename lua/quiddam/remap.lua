@@ -494,6 +494,22 @@ end, {
 })
 
 -- opens the companion test on the right, creating it immediately if necessary
+local function is_test_file(stem, extension)
+    if extension == "go" then
+        return vim.endswith(stem, "_test")
+    elseif extension == "js"
+        or extension == "jsx"
+        or extension == "ts"
+        or extension == "tsx"
+    then
+        return vim.endswith(stem, ".test") or vim.endswith(stem, ".spec")
+    elseif extension == "py" then
+        return vim.startswith(stem, "test_") or vim.endswith(stem, "_test")
+    end
+
+    return false
+end
+
 local function companion_test_path(source)
     local directory = vim.fn.fnamemodify(source, ":h")
     local filename = vim.fn.fnamemodify(source, ":t")
@@ -501,6 +517,12 @@ local function companion_test_path(source)
     local stem = vim.fn.fnamemodify(filename, ":r")
 
     local candidates
+
+    -- A test file has no companion test of its own. Without this, pressing the
+    -- mapping again from inside foo_test.go would create foo_test_test.go.
+    if is_test_file(stem, extension) then
+        return nil, "Already in a test file"
+    end
 
     if extension == "go" then
         candidates = {
@@ -628,11 +650,11 @@ local function open_companion_test()
         return
     end
 
-    local test_path = companion_test_path(source)
+    local test_path, reason = companion_test_path(source)
 
     if not test_path then
         vim.notify(
-            "No test-file convention for this file type",
+            reason or "No test-file convention for this file type",
             vim.log.levels.WARN
         )
         return
