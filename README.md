@@ -648,6 +648,13 @@ Formatting still runs; only the code actions are skipped.
 The Gitsigns mappings are buffer-local and only exist in files tracked by
 Git; untracked files are attached as well, so new files show `?` signs.
 
+In the status window that `Space g s` opens, `-` stages or unstages the file
+under the cursor, and `X` discards its changes: a modified file is checked out
+again and an untracked file is deleted. `X` also works on a visual selection
+of files, or on a single hunk after `=` expands the file's diff inline. Fugitive
+echoes a command that restores what was discarded; copy it before running
+anything else. `g?` lists the window's other mappings.
+
 `Space q q` writes all modified buffers with `:wa`, shuts down every ToggleTerm
 shell (including hidden ones), and then runs `:qa`. If a write fails, quitting
 stops so that changes are never silently discarded. Use `:qa!` to discard
