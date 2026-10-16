@@ -112,14 +112,17 @@ Install the files with this structure:
 │   └── vscode-probe.sh
 ├── lua/
 │   └── quiddam/
+│       ├── breakpoint_click.lua
 │       ├── debug_toolbar.lua
 │       ├── init.lua
 │       ├── packer.lua
+│       ├── pre_launch_task.lua
 │       ├── remap.lua
 │       ├── session.lua
 │       ├── set.lua
 │       ├── structural.lua
 │       ├── vscode_debug.lua
+│       ├── vscode_debugger.lua
 │       ├── windows.lua
 │       └── snippets/
 │           └── go.lua
@@ -530,19 +533,47 @@ Starting a JavaScript or TypeScript session presents these configurations:
 
 | Configuration | When to use it |
 |---|---|
+| **Launch current file with tsx** (TypeScript only) | Run the current `.ts`/`.tsx` file; uses the project's `node_modules/.bin/tsx`, else `tsx` on `PATH` |
 | **Launch current file with Node** | Start the current backend or command-line file under Node |
 | **Attach to running Node process** | Attach to an application that was started separately |
 | **Launch browser application with Vite** | Debug browser code served from `http://localhost:5173` |
 
 The configuration performs prerequisite checks before starting:
 
-- The current-file launcher verifies that `node` is available.
+- The current-file launchers verify that `node` (or `tsx`) is available.
 - Node attach warns when no running Node process can be found.
 - Browser debugging warns when nothing is listening on port `5173` and
   reminds you to start Vite, normally with `npm run dev`.
 
 Change the configured port in `after/plugin/debug.lua` when a project does not
 use Vite's default port.
+
+Configurations from a project's `.vscode/launch.json` are offered too, with
+`"type": "node"` and `"chrome"` accepted as VS Code writes them.
+
+A configuration's `preLaunchTask` runs before the debugger starts, so a
+TypeScript project with `"preLaunchTask": "tsc: build - tsconfig.json"` is
+rebuilt on every launch and restart. The label is looked up in
+`.vscode/tasks.json` (shell, process and typescript tasks, including
+`dependsOn`), and the labels VS Code detects itself, `tsc: build - <tsconfig>`
+and `npm: <script>`, work without a tasks file. If the task fails, its output is
+shown and the debugger is not started. Background tasks such as `tsc: watch`
+cannot be waited for and are skipped with a warning.
+
+#### Breakpoints with the mouse
+
+Double-click a line number or the sign column to toggle a breakpoint on that
+line. Double-clicking text still selects a word. It works while the toolbar is
+showing, too.
+
+#### Debugging inside VS Code
+
+Under `vscode-neovim` nothing from `nvim-dap` runs, because there is nowhere to
+draw it. The same `Space d` chords and function keys drive VS Code's own
+debugger instead (`lua/quiddam/vscode_debugger.lua`), so launch configurations,
+the debug toolbar and the variables view are VS Code's. Clicking the editor
+gutter toggles a breakpoint natively, as it always does in VS Code. `Space d t`
+uses the Go extension's `go.debug.cursor`.
 
 #### Debugger mappings
 

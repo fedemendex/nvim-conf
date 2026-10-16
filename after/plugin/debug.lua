@@ -1,3 +1,12 @@
+-- VS Code has its own debugger and nothing here could draw into it. The same
+-- <leader>d chords drive VS Code's debug commands instead; see
+-- lua/quiddam/vscode_debugger.lua.
+if vim.g.vscode then
+    require("quiddam.vscode_debugger")
+
+    return
+end
+
 local dap = require("dap")
 local dapui = require("dapui")
 ---@diagnostic disable-next-line: undefined-field
@@ -166,8 +175,6 @@ require("dap-python").setup(debugpy_python)
 
 -- JavaScript and TypeScript --------------------------------------------------
 
--- JavaScript and TypeScript --------------------------------------------------
-
 local function cancel_debug(message)
     vim.notify(message, vim.log.levels.ERROR, {
         title = "Debugger",
@@ -202,19 +209,101 @@ local function port_is_listening(port)
     return vim.v.shell_error == 0
 end
 
-require("dap-vscode-js").setup({
-    debugger_cmd = { "js-debug-adapter" },
-    adapters = {
-        "pwa-node",
-        "pwa-chrome",
-    },
-})
+-- js-debug is started as a server on a port nvim-dap picks, which also lets
+-- it open the child sessions Node and Chrome launches need. (nvim-dap-vscode-js
+-- is not used: it reads the port from the server's stdout, and Mason's
+-- js-debug-adapter prints a sentence there and defaults to a fixed port.)
+local function js_debug_adapter(type)
+    return {
+        type = "server",
+        host = "localhost",
+        port = "${port}",
+        executable = {
+            command = "js-debug-adapter",
+            args = { "${port}" },
+        },
+        -- launch.json files written for VS Code say "node" and "chrome", and
+        -- VS Code rewrites those to pwa-node and pwa-chrome before js-debug
+        -- sees them. js-debug ignores a launch it does not recognise the type
+        -- of, so the rewrite has to happen here.
+        --
+        -- This is also where preLaunchTask runs: the adapter has not been
+        -- started yet, so not calling on_config cancels the launch.
+        enrich_config = function(config, on_config)
+            local enriched = vim.tbl_extend("force", config, { type = type })
+            local task = enriched.preLaunchTask
+
+            -- Neither is a js-debug option.
+            enriched.preLaunchTask = nil
+            enriched.postDebugTask = nil
+
+            if not task then
+                on_config(enriched)
+
+                return
+            end
+
+            require("quiddam.pre_launch_task").run(task, function(ok)
+                if ok then
+                    on_config(enriched)
+                end
+            end)
+        end,
+    }
+end
+
+dap.adapters["pwa-node"] = js_debug_adapter("pwa-node")
+dap.adapters["pwa-chrome"] = js_debug_adapter("pwa-chrome")
+dap.adapters.node = dap.adapters["pwa-node"]
+dap.adapters.chrome = dap.adapters["pwa-chrome"]
 
 local js_languages = {
     "javascript",
     "javascriptreact",
     "typescript",
     "typescriptreact",
+}
+
+-- Node cannot run TypeScript on its own (before v22.6, and without flags
+-- after), so TypeScript files launch through tsx: the project's own copy when
+-- there is a node_modules above the file, else one on PATH.
+local function find_tsx()
+    local directory = vim.fn.expand("%:p:h")
+    local modules = vim.fs.find("node_modules", {
+        upward = true,
+        path = directory,
+        type = "directory",
+    })[1]
+
+    if modules and vim.fn.executable(modules .. "/.bin/tsx") == 1 then
+        return modules .. "/.bin/tsx"
+    end
+
+    if vim.fn.executable("tsx") == 1 then
+        return "tsx"
+    end
+
+    cancel_debug(
+        "`tsx` was not found.\n"
+        .. "Install it in the project, for example:\n"
+        .. "npm install --save-dev tsx"
+    )
+end
+
+local typescript_launch = {
+    name = "Launch current file with tsx",
+    type = "pwa-node",
+    request = "launch",
+    program = function()
+        return vim.api.nvim_buf_get_name(0)
+    end,
+    runtimeExecutable = find_tsx,
+    cwd = "${workspaceFolder}",
+    sourceMaps = true,
+    skipFiles = {
+        "<node_internals>/**",
+        "${workspaceFolder}/node_modules/**",
+    },
 }
 
 for _, language in ipairs(js_languages) do
@@ -298,6 +387,10 @@ for _, language in ipairs(js_languages) do
             sourceMaps = true,
         },
     }
+
+    if language:find("^typescript") then
+        table.insert(dap.configurations[language], 1, typescript_launch)
+    end
 end
 
 -- Debugging reminder ---------------------------------------------------------
@@ -408,6 +501,9 @@ dap_listeners.after.event_exited.debug_error_message =
             end)
         end
     end
+
+-- Double-clicking the gutter toggles a breakpoint.
+require("quiddam.breakpoint_click").setup()
 
 -- Familiar debugger controls ------------------------------------------------
 

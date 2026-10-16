@@ -179,13 +179,6 @@ return require("packer").startup(function(use)
     })
 
     use({
-        "mxsdev/nvim-dap-vscode-js",
-        requires = {
-            "mfussenegger/nvim-dap",
-        },
-    })
-
-    use({
         "theHamsta/nvim-dap-virtual-text",
         requires = {
             "mfussenegger/nvim-dap",

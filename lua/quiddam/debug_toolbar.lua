@@ -187,7 +187,7 @@ local function on_press(key)
 
     if not region then
         state.pressed = false
-        return key
+        return require("quiddam.breakpoint_click").press(key)
     end
 
     state.pressed = true
@@ -259,6 +259,9 @@ local function unmap_mouse()
             pcall(vim.keymap.del, mode, key)
         end
     end
+
+    -- The toolbar's mappings shadowed the gutter double-click; bring it back.
+    require("quiddam.breakpoint_click").setup()
 end
 
 function M.open()
